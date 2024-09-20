@@ -2,8 +2,8 @@ import requests
 import json
 
 # Provide the endpoint and the api key
-endpoint_url = "<enter the endpoint url here"
-api_key = "<enter the api key here>"
+endpoint_url = ""
+api_key = ""
 
 # Define the headers
 headers = {
@@ -16,7 +16,7 @@ headers = {
 payload = {
     "messages": [
         {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Which AI model are you?"}
+        {"role": "user", "content": "What is Azure?"}
     ],
     "max_tokens": 100,
     "temperature": 0.7,
