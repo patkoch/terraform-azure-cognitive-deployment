@@ -1,10 +1,10 @@
 resource "azurerm_resource_group" "example" {
-  name     = "example-resources"
+  name     = "open-ai-test-west-europe-rg"
   location = "West Europe"
 }
 
 resource "azurerm_cognitive_account" "example" {
-  name                = "example-ca-pk"
+  name                = "open-ai-test-west-europe-ca"
   location            = azurerm_resource_group.example.location
   resource_group_name = azurerm_resource_group.example.name
   kind                = "OpenAI"
@@ -12,7 +12,7 @@ resource "azurerm_cognitive_account" "example" {
 }
 
 resource "azurerm_cognitive_deployment" "example" {
-  name                 = "example-cd-pk"
+  name                 = "open-ai-test-west-europe-cd"
   cognitive_account_id = azurerm_cognitive_account.example.id
   model {
     format  = "OpenAI"
