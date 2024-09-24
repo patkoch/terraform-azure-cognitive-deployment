@@ -11,17 +11,9 @@ After the deployment, it is possible to conduct a chat by using a Python script 
   <img src="pictures/15_send_requests.png" width="100%" height="100%" title="15_send_requests">
 </p>
 
-# Create a terraform.tfvars file
+# Prepare the terraform.tfvars file
 
-Create a new file inside the checked out directory of this repository, named "terraform.tfvars".
-There are 12 values to assign to predefined variables.
-The only value to determine for your personal deployment is the "subscription_id" of your Azure subscription.
-
-You can run the following command to find the "subscription_id":
-
-```azurecli
-az account show
-```
+Create a new file inside the checked out directory of this repository, named "terraform.tfvars". The content of it can be seen in the code snippet below - there are 12 values to assign to predefined variables:
 
 ```hcl
 subscription_id = "<add your subscription id here>"
@@ -38,4 +30,58 @@ cognitive_deployment_sku_name = "GlobalStandard"
 cognitive_deployment_sku_capacity = 45
 ```
 
+The only value to determine for your personal deployment is the "subscription_id" of your Azure subscription.
+You can run the following command to find the "subscription_id":
 
+```azurecli
+az account show
+```
+
+Add the subscription id as value in the first line in the "terraform.tfvars" file and save it.
+The "terraform.tfvars" has to be located side by side to the "main.tf", "terraform.tf" and the "variables.tf" files.
+
+# Deploy the resources using Terraform
+
+Start a new terminal, change the directory of the checked out directory of the repository.
+
+After that, conduct the following four Terraform commands:
+
+## Terraform init
+
+```hcl
+terraform init
+```
+
+<p align="left">
+  <img src="pictures/01_terraform_init.png" width="80%" height="80%" title="01_terraform_init">
+</p>
+
+## Terraform validate
+
+```hcl
+terraform validate
+```
+
+<p align="left">
+  <img src="pictures/02_terraform_validate.png" width="80%" height="80%" title="02_terraform_validate">
+</p>
+
+## Terraform plan
+
+```hcl
+terraform plan -out tfplan
+```
+
+<p align="left">
+  <img src="pictures/03_terraform_plan.png" width="80%" height="80%" title="03_terraform_plan">
+</p>
+
+## Terraform apply
+
+```hcl
+terraform apply tfplan
+```
+
+<p align="left">
+  <img src="pictures/04_terraform_apply.png" width="80%" height="80%" title="04_terraform_apply">
+</p>
