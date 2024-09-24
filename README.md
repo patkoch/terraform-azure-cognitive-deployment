@@ -97,3 +97,49 @@ and the "gpt-4" deployment "open-ai-test-west-europe-cd":
 <p align="left">
   <img src="pictures/11_azure_portal_open_ai_studio_deployments_explore.png" width="100%" height="100%" title="11_azure_portal_open_ai_studio_deployments_explore">
 </p>
+
+You can change the type of the deployment by adapting the following values:
+
+```hcl
+cognitive_deployment_model_format = "OpenAI"
+cognitive_deployment_model_name = "gpt-4"
+cognitive_deployment_model_version = "turbo-2024-04-09"
+cognitive_deployment_sku_name = "GlobalStandard"
+```
+
+In that case, it's about a "gpt-4" deployment with the model version "turbo-2024-04-09".
+
+# Conduct prompts and get a response
+
+## Get the endpoint credentials
+
+You need to get the following information of the endpoint to establish a connection to the service:
+
+ * the API Key
+ * the Target URI
+
+Explore the Details of the deployment to find that data:
+
+<p align="left">
+  <img src="pictures/13_azure_portal_open_ai_studio_deployments_endpoints.png" width="100%" height="100%" title="13_azure_portal_open_ai_studio_deployments_endpoints">
+</p>
+
+## Use a python script to send the requests
+
+Insert the mentioned information in the lines 5, respectively 6 in the file "/scripts/send_requests.py":
+
+<p align="left">
+  <img src="pictures/14_vs_code_insert_endpoint_credentials.png" width="100%" height="100%" title="14_vs_code_insert_endpoint_credentials">
+</p>
+
+Afte that, call the file using Python like:
+
+<p align="left">
+  <img src="pictures/15_send_requests.png" width="100%" height="100%" title="15_send_requests">
+</p>
+
+# References
+
+The code of this example was partially created with the GitHub Copilot, respectively I used also the following examples of HashiCorp:
+
+https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cognitive_account
