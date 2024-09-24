@@ -129,7 +129,7 @@ Explore the Details of the deployment to find that data:
 Insert the mentioned information in the lines 5, respectively 6 in the file "/scripts/send_requests.py":
 
 <p align="left">
-  <img src="pictures/14_vs_code_insert_endpoint_credentials.png" width="100%" height="100%" title="14_vs_code_insert_endpoint_credentials">
+  <img src="pictures/14_vs_code_insert_endpoint_credentials.png" width="60%" height="60%" title="14_vs_code_insert_endpoint_credentials">
 </p>
 
 Afte that, call the file using Python like:
