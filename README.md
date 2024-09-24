@@ -53,7 +53,7 @@ terraform init
 ```
 
 <p align="left">
-  <img src="pictures/01_terraform_init.png" width="80%" height="80%" title="01_terraform_init">
+  <img src="pictures/01_terraform_init.png" width="70%" height="70%" title="01_terraform_init">
 </p>
 
 ## Terraform validate
@@ -73,7 +73,7 @@ terraform plan -out tfplan
 ```
 
 <p align="left">
-  <img src="pictures/03_terraform_plan.png" width="60%" height="60%" title="03_terraform_plan">
+  <img src="pictures/03_terraform_plan.png" width="50%" height="50%" title="03_terraform_plan">
 </p>
 
 ## Terraform apply
@@ -131,7 +131,7 @@ Explore the Details of the deployment to find that data:
 Insert the mentioned information in the lines 5, respectively 6 in the file "/scripts/send_requests.py":
 
 <p align="left">
-  <img src="pictures/14_vs_code_insert_endpoint_credentials.png" width="60%" height="60%" title="14_vs_code_insert_endpoint_credentials">
+  <img src="pictures/14_vs_code_insert_endpoint_credentials.png" width="50%" height="50%" title="14_vs_code_insert_endpoint_credentials">
 </p>
 
 Afte that, call the file using Python like:
