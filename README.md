@@ -107,6 +107,8 @@ cognitive_deployment_model_version = "turbo-2024-04-09"
 cognitive_deployment_sku_name = "GlobalStandard"
 ```
 
+Check at [Azure OpenAI Service models](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models) which model fits for you also regarding your prefered region.
+
 In that case, it's about a "gpt-4" deployment with the model version "turbo-2024-04-09".
 
 # Conduct prompts and get a response
@@ -138,8 +140,18 @@ Afte that, call the file using Python like:
   <img src="pictures/15_send_requests.png" width="100%" height="100%" title="15_send_requests">
 </p>
 
+# Destroy the resources
+
+If there is no need any more, then destroy the resources using:
+
+```hcl
+terraform destroy
+```
+
 # References
 
-The code of this example was partially created with the GitHub Copilot, respectively I used also the following examples of HashiCorp:
+The code of this example was partially created with the GitHub Copilot, respectively I used also the following examples and documentation of HashiCorp and Microsoft:
 
-https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cognitive_account
+[Terraform Registry - azurerm_cognitive_account](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/cognitive_account)
+
+[Azure OpenAI Service models](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models)
