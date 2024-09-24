@@ -63,7 +63,7 @@ terraform validate
 ```
 
 <p align="left">
-  <img src="pictures/02_terraform_validate.png" width="80%" height="80%" title="02_terraform_validate">
+  <img src="pictures/02_terraform_validate.png" width="60%" height="60%" title="02_terraform_validate">
 </p>
 
 ## Terraform plan
@@ -73,7 +73,7 @@ terraform plan -out tfplan
 ```
 
 <p align="left">
-  <img src="pictures/03_terraform_plan.png" width="80%" height="80%" title="03_terraform_plan">
+  <img src="pictures/03_terraform_plan.png" width="60%" height="60%" title="03_terraform_plan">
 </p>
 
 ## Terraform apply
@@ -84,4 +84,16 @@ terraform apply tfplan
 
 <p align="left">
   <img src="pictures/04_terraform_apply.png" width="80%" height="80%" title="04_terraform_apply">
+</p>
+
+This finally deploys the Azure AI Service named "open-ai-test-west-europe-ca":
+
+<p align="left">
+  <img src="pictures/07_azure_portal_open_ai.png" width="100%" height="100%" title="07_azure_portal_open_ai">
+</p>
+
+and the "gpt-4" deployment "open-ai-test-west-europe-cd":
+
+<p align="left">
+  <img src="pictures/11_azure_portal_open_ai_studio_deployments_explore.png" width="100%" height="100%" title="11_azure_portal_open_ai_studio_deployments_explore">
 </p>
