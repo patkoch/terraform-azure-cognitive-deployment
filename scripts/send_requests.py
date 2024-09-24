@@ -11,8 +11,6 @@ headers = {
     "api-key": api_key
 }
 
-# Define the payload with instructions and context
-# Define the payload with instructions and context
 payload = {
     "messages": [
         {"role": "system", "content": "You are a helpful assistant."},
