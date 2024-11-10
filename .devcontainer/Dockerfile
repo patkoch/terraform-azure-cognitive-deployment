@@ -16,3 +16,5 @@ RUN apt-get update && apt-get install -y gnupg software-properties-common curl w
 RUN apt-get update && apt-get install -y \
     wget \
     git
+# install python
+RUN apt-get update && apt-get install -y python3 python3-pip
