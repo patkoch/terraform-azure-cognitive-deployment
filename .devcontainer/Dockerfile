@@ -18,3 +18,5 @@ RUN apt-get update && apt-get install -y \
     git
 # install python
 RUN apt-get update && apt-get install -y python3 python3-pip
+# install requests
+RUN pip install requests -y
