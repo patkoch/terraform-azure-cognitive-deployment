@@ -19,4 +19,4 @@ jobs:
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
       - name: Login to Azure with the Service Principal
-        run: az login --service-principal -u ${{ secrets.CLIENT_ID }} -p @cert.pem --tenant ${{ secrets.TENANT_ID }}
+        run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
