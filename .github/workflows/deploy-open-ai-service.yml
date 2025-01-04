@@ -27,28 +27,46 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
     
+    #   - name: Set environment variables
+    #     run: |
+    #       echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
+    #       echo "ARM_CLIENT_CERTIFICATE_PATH=cert.pfx" >> $GITHUB_ENV
+    #       echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
+    #       echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
+    #       echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
       - name: Set environment variables
         run: |
-          echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_CERTIFICATE_PATH=cert.pfx" >> $GITHUB_ENV
-          echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
-          echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
-          echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_client_id=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_tenant_id=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_client_certificate_path=cert.pfx" >> $GITHUB_ENV
+          echo "TF_VAR_client_certificate_password=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
+          echo "TF_VAR_resource_group_name=${{ vars.RESOURCE_GROUP_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_resource_group_location=${{ vars.RESOURCE_GROUP_LOCATION }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_name=${{ vars.COGNITIVE_ACCOUNT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_kind=${{ vars.COGNITIVE_ACCOUNT_KIND }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_sku_name=${{ vars.COGNITIVE_ACCOUNT_SKU_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_name=${{ vars.COGNITIVE_DEPLOYMENT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_format=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_FORMAT }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_name=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_version=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_VERSION }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_ACCOUNT_SKU_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
 
       - name: Initialize Terraform
         run: terraform init
-        env:
-            ARM_CLIENT_ID: ${{ secrets.CLIENT_ID }}
-            ARM_TENANT_ID: ${{ secrets.TENANT_ID }}
-            ARM_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
-            ARM_CLIENT_CERTIFICATE_PATH: cert.pfx
-            ARM_CLIENT_CERTIFICATE_PASSWORD: ${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}
+        # env:
+        #     ARM_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+        #     ARM_TENANT_ID: ${{ secrets.TENANT_ID }}
+        #     ARM_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+        #     ARM_CLIENT_CERTIFICATE_PATH: cert.pfx
+        #     ARM_CLIENT_CERTIFICATE_PASSWORD: ${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}
 
       - name: Plan Terraform
         run: terraform plan
-        env:
-            ARM_CLIENT_ID: ${{ secrets.CLIENT_ID }}
-            ARM_TENANT_ID: ${{ secrets.TENANT_ID }}
-            ARM_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
-            ARM_CLIENT_CERTIFICATE_PATH: cert.pfx
-            ARM_CLIENT_CERTIFICATE_PASSWORD: ${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}
+        # env:
+        #     ARM_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+        #     ARM_TENANT_ID: ${{ secrets.TENANT_ID }}
+        #     ARM_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+        #     ARM_CLIENT_CERTIFICATE_PATH: cert.pfx
+        #     ARM_CLIENT_CERTIFICATE_PASSWORD: ${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}
