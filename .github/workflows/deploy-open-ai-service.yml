@@ -67,8 +67,8 @@ jobs:
           echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
 
            # Enable detailed logging in Terraform
-      - name: Enable Terraform debug logging
-        run: echo "TF_LOG=DEBUG" >> $GITHUB_ENV
+    #   - name: Enable Terraform debug logging
+    #     run: echo "TF_LOG=DEBUG" >> $GITHUB_ENV
 
       - name: Initialize Terraform
         run: terraform init
