@@ -18,18 +18,37 @@ jobs:
       # decode the github secret CLIENT_SECRET and save it as cert.pem
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
+
+      - name: Decode the secret and save it as a file
+        run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
+
       - name: Login to Azure with the Service Principal
         run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
+    
+      - name: Set environment variables
+        run: |
+          echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_CERTIFICATE_PATH=cert.pfx" >> $GITHUB_ENV
+          echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
       - name: Initialize Terraform
         run: terraform init
+        env:
+            ARM_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+            ARM_TENANT_ID: ${{ secrets.TENANT_ID }}
+            ARM_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+            ARM_CLIENT_CERTIFICATE_PATH: cert.pfx
+            ARM_CLIENT_CERTIFICATE_PASSWORD: ${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}
 
       - name: Plan Terraform
         run: terraform plan
         env:
-          ARM_CLIENT_ID: ${{ secrets.CLIENT_ID }}
-          ARM_TENANT_ID: ${{ secrets.TENANT_ID }}
-          ARM_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
-          ARM_CLIENT_CERTIFICATE_PATH: cert.pem
+            ARM_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+            ARM_TENANT_ID: ${{ secrets.TENANT_ID }}
+            ARM_SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+            ARM_CLIENT_CERTIFICATE_PATH: cert.pfx
+            ARM_CLIENT_CERTIFICATE_PASSWORD: ${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}
