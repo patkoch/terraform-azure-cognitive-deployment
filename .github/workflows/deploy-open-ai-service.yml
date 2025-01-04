@@ -63,7 +63,7 @@ jobs:
           echo "TF_VAR_cognitive_deployment_model_format=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_FORMAT }}" >> $GITHUB_ENV
           echo "TF_VAR_cognitive_deployment_model_name=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_cognitive_deployment_model_version=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_VERSION }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_ACCOUNT_SKU_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_DEPLOYMENT_SKU_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
 
            # Enable detailed logging in Terraform
