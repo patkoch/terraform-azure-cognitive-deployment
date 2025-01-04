@@ -3,6 +3,16 @@ variable "subscription_id" {
   description = "The Azure subscription ID"
 }
 
+variable "client_id" {
+  type        = string
+  description = "The Azure client ID"
+}
+
+variable "tenant_id" {
+  type        = string
+  description = "The Azure tenant ID"
+}
+
 variable "resource_group_name" {
   type        = string
   description = "Name of the resource group" 
