@@ -1,0 +1,17 @@
+name: Deploy Open AI Service
+
+on:
+  push:
+    branches:
+      - feature/*
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
