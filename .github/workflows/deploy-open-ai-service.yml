@@ -22,6 +22,11 @@ jobs:
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
 
+      - name: Verify the .pfx file
+        run: openssl pkcs12 -info -in cert.pfx -noout
+        env:
+          PFX_PASSWORD: ${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}
+
       - name: Login to Azure with the Service Principal
         run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
       - name: Set up Terraform
