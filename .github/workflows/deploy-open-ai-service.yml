@@ -114,6 +114,9 @@ jobs:
           echo "ARM_CLIENT_CERTIFICATE_PATH=cert.pfx" >> $GITHUB_ENV
           echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-      
+
+      - name: Initialize Terraform
+        run: terraform init   
+        
       - name: Destroy Terraform
         run: terraform destroy -auto-approve
