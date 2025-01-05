@@ -3,15 +3,15 @@ variable "subscription_id" {
   description = "The Azure subscription ID"
 }
 
-variable "client_id" {
-  type        = string
-  description = "The Azure client ID"
-}
+# variable "client_id" {
+#   type        = string
+#   description = "The Azure client ID"
+# }
 
-variable "tenant_id" {
-  type        = string
-  description = "The Azure tenant ID"
-}
+# variable "tenant_id" {
+#   type        = string
+#   description = "The Azure tenant ID"
+# }
 
 # variable "client_certificate_path" {
 #   type        = string
