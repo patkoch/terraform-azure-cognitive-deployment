@@ -82,14 +82,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
-      # - name: Set up Azure login
-      #   uses: azure/login@v1
-      #   with:
-      #     client-id: ${{ secrets.CLIENT_ID }}
-      #     tenant-id: ${{ secrets.TENANT_ID }}
-      #     subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
-      #     allow-no-subscriptions: true
       
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
@@ -108,8 +100,6 @@ jobs:
       - name: Set environment variables
         run: |
           echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-          echo "TF_VAR_client_id=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
-          echo "TF_VAR_tenant_id=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
           echo "TF_VAR_resource_group_name=${{ vars.RESOURCE_GROUP_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_resource_group_location=${{ vars.RESOURCE_GROUP_LOCATION }}" >> $GITHUB_ENV
           echo "TF_VAR_cognitive_account_name=${{ vars.COGNITIVE_ACCOUNT_NAME }}" >> $GITHUB_ENV
