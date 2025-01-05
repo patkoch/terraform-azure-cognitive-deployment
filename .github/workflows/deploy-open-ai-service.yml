@@ -16,8 +16,25 @@ on:
           - destroy
   
 jobs:
+
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Decode the secret and save it as a .pem file
+        run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
+
+      - name: Login to Azure with the Service Principal
+        run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
+
+      - name: Check if the storage account exists
+        run: az storage account show --name azureworkshopdemostorage --resource-group azureworkshop-demo-rg
+
   deploy:
     if: github.event.inputs.action == 'deploy'
+    needs: verification
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -26,15 +43,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # # decode the github secret CLIENT_SECRET and save it as cert.pem
-      # - name: Decode the secret and save it as a file
-      #   run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
-
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
 
-    #   - name: Login to Azure with the Service Principal
-    #     run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
     
@@ -75,6 +86,7 @@ jobs:
 
   destroy:
     if: github.event.inputs.action == 'destroy'
+    needs: verification
     runs-on: ubuntu-latest
     permissions:
       id-token: write
