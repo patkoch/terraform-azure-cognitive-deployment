@@ -49,7 +49,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
     
-      - name: Set environment variables
+      - name: Configuration of Terraform for using the Client Certificate
         run: |
           echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
           echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
@@ -57,7 +57,7 @@ jobs:
           echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
-      - name: Set environment variables
+      - name: Set environment variables used to serve as input variables
         run: |
           echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
           echo "TF_VAR_resource_group_name=${{ vars.RESOURCE_GROUP_NAME }}" >> $GITHUB_ENV
@@ -72,16 +72,16 @@ jobs:
           echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_DEPLOYMENT_SKU_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
 
-      - name: Initialize Terraform
+      - name: Terraform Initialize 
         run: terraform init
 
-      - name: Terraform validate
+      - name: Terraform Validate
         run: terraform validate
 
-      - name: Plan Terraform
+      - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      - name: Apply Terraform
+      - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
   destroy:
@@ -101,7 +101,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
 
-      - name: Set environment variables
+      - name: Configuration of Terraform for using the Client Certificate
         run: |
           echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
           echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
@@ -109,7 +109,7 @@ jobs:
           echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
           echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
       
-      - name: Set environment variables
+      - name: Set environment variables used to serve as input variables
         run: |
           echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
           echo "TF_VAR_resource_group_name=${{ vars.RESOURCE_GROUP_NAME }}" >> $GITHUB_ENV
@@ -124,8 +124,8 @@ jobs:
           echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_DEPLOYMENT_SKU_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
 
-      - name: Initialize Terraform
+      - name: Terraform Initialize 
         run: terraform init   
 
-      - name: Destroy Terraform
+      - name: Terraform Destroy
         run: terraform destroy -auto-approve
