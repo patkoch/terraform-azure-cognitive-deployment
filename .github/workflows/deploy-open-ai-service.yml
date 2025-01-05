@@ -1,16 +1,23 @@
 name: Deploy Open AI Service
 
 on:
-  push:
-    branches:
-      - feature/*
   pull_request:
     branches:
       - main
   workflow_dispatch:
-
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - destroy
+  
 jobs:
-  build:
+  deploy:
+    if: github.event.inputs.action == 'deploy'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -30,9 +37,6 @@ jobs:
       # decode the github secret CLIENT_SECRET and save it as cert.pem
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
-
-      - name: Decode the secret and save it as a file
-        run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
 
     #   - name: Login to Azure with the Service Principal
     #     run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
@@ -66,12 +70,38 @@ jobs:
           echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_DEPLOYMENT_SKU_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
 
-           # Enable detailed logging in Terraform
-    #   - name: Enable Terraform debug logging
-    #     run: echo "TF_LOG=DEBUG" >> $GITHUB_ENV
-
       - name: Initialize Terraform
         run: terraform init
 
+      - name: Terraform validate
+        run: terraform validate
+
       - name: Plan Terraform
-        run: terraform plan
+        run: terraform plan -out=tfplan
+
+      - name: Apply Terraform
+        run: terraform apply -auto-approve tfplan
+
+  destroy:
+    if: github.event.inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
+      
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+      
+      - name: Destroy Terraform
+        run: terraform destroy -auto-approve
