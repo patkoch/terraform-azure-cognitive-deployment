@@ -93,13 +93,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Azure login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.CLIENT_ID }}
-          tenant-id: ${{ secrets.TENANT_ID }}
-          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
-          allow-no-subscriptions: true
+      # - name: Set up Azure login
+      #   uses: azure/login@v1
+      #   with:
+      #     client-id: ${{ secrets.CLIENT_ID }}
+      #     tenant-id: ${{ secrets.TENANT_ID }}
+      #     subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
+      #     allow-no-subscriptions: true
       
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
