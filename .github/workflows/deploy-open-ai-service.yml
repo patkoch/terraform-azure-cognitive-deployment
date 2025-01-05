@@ -1,17 +1,128 @@
-name: Deploy Open AI Service
+name: Open AI Service
 
 on:
-  push:
-    branches:
-      - feature/*
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
-
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - destroy
+  
 jobs:
-  build:
+
+  verification:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Decode the secret and save it as a .pem file
+        run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
+
+      - name: Login to Azure with the Service Principal
+        run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
+
+      - name: Check if the storage account exists
+        run: az storage account show --name azureworkshopdemostorage --resource-group azureworkshop-demo-rg
+
+  deploy:
+    if: github.event.inputs.action == 'deploy'
+    needs: verification
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Decode the secret and save it as a file
+        run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+    
+      - name: Configuration of Terraform for using the Client Certificate
+        run: |
+          echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_CERTIFICATE_PATH=cert.pfx" >> $GITHUB_ENV
+          echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+      - name: Set environment variables used to serve as input variables
+        run: |
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_resource_group_name=${{ vars.RESOURCE_GROUP_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_resource_group_location=${{ vars.RESOURCE_GROUP_LOCATION }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_name=${{ vars.COGNITIVE_ACCOUNT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_kind=${{ vars.COGNITIVE_ACCOUNT_KIND }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_sku_name=${{ vars.COGNITIVE_ACCOUNT_SKU_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_name=${{ vars.COGNITIVE_DEPLOYMENT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_format=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_FORMAT }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_name=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_version=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_VERSION }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_DEPLOYMENT_SKU_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
+
+      - name: Terraform Initialize 
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+  destroy:
+    if: github.event.inputs.action == 'destroy'
+    needs: verification
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Decode the secret and save it as a file
+        run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
+      
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Configuration of Terraform for using the Client Certificate
+        run: |
+          echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
+          echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_CERTIFICATE_PATH=cert.pfx" >> $GITHUB_ENV
+          echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+      
+      - name: Set environment variables used to serve as input variables
+        run: |
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_resource_group_name=${{ vars.RESOURCE_GROUP_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_resource_group_location=${{ vars.RESOURCE_GROUP_LOCATION }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_name=${{ vars.COGNITIVE_ACCOUNT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_kind=${{ vars.COGNITIVE_ACCOUNT_KIND }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_account_sku_name=${{ vars.COGNITIVE_ACCOUNT_SKU_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_name=${{ vars.COGNITIVE_DEPLOYMENT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_format=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_FORMAT }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_name=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_model_version=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_VERSION }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_DEPLOYMENT_SKU_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
+
+      - name: Terraform Initialize 
+        run: terraform init   
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve

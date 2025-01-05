@@ -3,6 +3,26 @@ variable "subscription_id" {
   description = "The Azure subscription ID"
 }
 
+# variable "client_id" {
+#   type        = string
+#   description = "The Azure client ID"
+# }
+
+# variable "tenant_id" {
+#   type        = string
+#   description = "The Azure tenant ID"
+# }
+
+# variable "client_certificate_path" {
+#   type        = string
+#   description = "The path to the client certificate"
+# }
+
+# variable "client_certificate_password" {
+#   type        = string
+#   description = "The password for the client certificate"
+# }
+
 variable "resource_group_name" {
   type        = string
   description = "Name of the resource group" 
