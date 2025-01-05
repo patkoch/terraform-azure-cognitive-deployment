@@ -34,9 +34,12 @@ jobs:
           subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
           allow-no-subscriptions: true
 
-      # decode the github secret CLIENT_SECRET and save it as cert.pem
+      # # decode the github secret CLIENT_SECRET and save it as cert.pem
+      # - name: Decode the secret and save it as a file
+      #   run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
+
       - name: Decode the secret and save it as a file
-        run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
+        run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
 
     #   - name: Login to Azure with the Service Principal
     #     run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
