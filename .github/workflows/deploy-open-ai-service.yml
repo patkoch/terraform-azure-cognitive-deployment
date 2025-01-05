@@ -1,9 +1,6 @@
-name: Deploy Open AI Service
+name: Open AI Service
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       action:
