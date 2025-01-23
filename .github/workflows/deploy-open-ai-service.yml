@@ -11,6 +11,14 @@ on:
         options:
           - deploy
           - destroy
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'openai-test'
+        type: choice
+        options:
+          - openai-test
+          - openai-prod
   
 jobs:
 
@@ -33,6 +41,7 @@ jobs:
     if: github.event.inputs.action == 'deploy'
     needs: verification
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
@@ -45,7 +54,7 @@ jobs:
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
-    
+   
       - name: Configuration of Terraform for using the Client Certificate
         run: |
           echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
@@ -85,6 +94,7 @@ jobs:
     if: github.event.inputs.action == 'destroy'
     needs: verification
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
