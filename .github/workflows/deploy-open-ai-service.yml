@@ -56,7 +56,7 @@ jobs:
         uses: hashicorp/setup-terraform@v1
 
       - name: Print the environment name
-        run: "Environment: ${{ github.event.inputs.environment }}"
+        run: echo "Environment: ${{ github.event.inputs.environment }}"
     
       - name: Configuration of Terraform for using the Client Certificate
         run: |
