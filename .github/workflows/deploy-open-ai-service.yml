@@ -97,6 +97,7 @@ jobs:
     if: github.event.inputs.action == 'destroy'
     needs: verification
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
