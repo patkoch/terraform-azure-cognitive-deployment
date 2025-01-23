@@ -55,8 +55,8 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
 
-      - name: Print the value of the environment variable
-        run: echo ${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}
+      - name: Print the environment name
+        run: "Environment: ${{ github.event.inputs.environment }}"
     
       - name: Configuration of Terraform for using the Client Certificate
         run: |
