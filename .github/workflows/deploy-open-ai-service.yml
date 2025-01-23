@@ -41,6 +41,7 @@ jobs:
     if: github.event.inputs.action == 'deploy'
     needs: verification
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
@@ -53,6 +54,9 @@ jobs:
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
+
+      - name: Print the value of the environment variable
+        run: echo ${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}
     
       - name: Configuration of Terraform for using the Client Certificate
         run: |
