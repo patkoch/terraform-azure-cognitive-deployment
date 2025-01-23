@@ -11,6 +11,14 @@ on:
         options:
           - deploy
           - destroy
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'openai-test'
+        type: choice
+        options:
+          - openai-test
+          - openai-prod
   
 jobs:
 
