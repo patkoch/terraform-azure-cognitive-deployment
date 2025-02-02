@@ -1,3 +1,10 @@
+# GitHub Action Workflow
+
+Current state of the workflow execution:
+
+[![Open AI Service](https://github.com/patkoch/terraform-azure-cognitive-deployment/actions/workflows/deploy-open-ai-service.yml/badge.svg)](https://github.com/patkoch/terraform-azure-cognitive-deployment/actions/workflows/deploy-open-ai-service.yml)
+
+
 # Contains a Terraform configuration to provision a cognitive deployment on Azure
 
 This [Terraform](https://www.terraform.io/) configuration is capable of deploying an Azure Open AI Service and a gpt-4 model.
