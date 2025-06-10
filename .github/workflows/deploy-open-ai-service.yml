@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Decode the secret and save it as a .pem file
         run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
@@ -47,13 +47,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
    
       - name: Configuration of Terraform for using the Client Certificate
         run: |
@@ -100,13 +100,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       
       - name: Decode the secret and save it as a file
         run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
       
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
 
       - name: Configuration of Terraform for using the Client Certificate
         run: |
