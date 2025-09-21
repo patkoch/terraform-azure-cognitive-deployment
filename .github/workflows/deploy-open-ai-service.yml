@@ -35,17 +35,36 @@ jobs:
           echo "╠══════════════════════════════════════════════════════════════════════╣"
           missing=0
 
-          # Check GitHub secrets
-          for secret in CLIENT_ID TENANT_ID SUBSCRIPTION_ID; do
-            if [ -z "${{ secrets[$secret] }}" ]; then
-              printf "║ %-40s ❌ MISSING ║\n" "$secret"
-              missing=1
-            else
-              printf "║ %-40s ✅ OK      ║\n" "$secret"
-            fi
-          done
+          # Check each secret explicitly
+          if [ -z "${{ secrets.CLIENT_ID }}" ]; then
+            printf "║ %-40s ❌ MISSING ║\n" "CLIENT_ID"
+            missing=1
+          else
+            printf "║ %-40s ✅ OK      ║\n" "CLIENT_ID"
+          fi
 
-          echo "╠══════════════════════════════════════════════════════════════════════╣"
+          if [ -z "${{ secrets.TENANT_ID }}" ]; then
+            printf "║ %-40s ❌ MISSING ║\n" "TENANT_ID"
+            missing=1
+          else
+            printf "║ %-40s ✅ OK      ║\n" "TENANT_ID"
+          fi
+
+          if [ -z "${{ secrets.SUBSCRIPTION_ID }}" ]; then
+            printf "║ %-40s ❌ MISSING ║\n" "SUBSCRIPTION_ID"
+            missing=1
+          else
+            printf "║ %-40s ✅ OK      ║\n" "SUBSCRIPTION_ID"
+          fi
+
+          echo "╚══════════════════════════════════════════════════════════════════════╝"
+
+          if [ "$missing" -eq 1 ]; then
+            echo "❌ Some required secrets are missing."
+            exit 1
+          else
+            echo "✅ All required secrets are set."
+          fi
 
           # Check tfvars variables
           for var in cognitive_account_kind cognitive_account_name cognitive_account_sku_name cognitive_deployment_model_format cognitive_deployment_model_name cognitive_deployment_model_version cognitive_deployment_name cognitive_deployment_sku_name cognitive_deployment_sku_capacity resource_group_location resource_group_name; do
