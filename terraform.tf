@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.1"
+      version = ">= 4.32"
     }
   }
 
@@ -12,10 +12,6 @@ terraform {
     container_name       = "tfstateopenai"
     key                  = "terraform.tfstate"
   }
-}
 
-provider "azurerm" {
-  features {}
-
-  subscription_id = var.subscription_id
+    required_version = ">= 1.0.0"
 }
