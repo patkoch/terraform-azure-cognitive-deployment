@@ -17,8 +17,8 @@ on:
         default: 'openai-test'
         type: choice
         options:
-          - openai-test
-          - openai-prod
+          - test
+          - prod
   
 jobs:
 
@@ -26,13 +26,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Decode the secret and save it as a .pem file
         run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
 
-      - name: Login to Azure with the Service Principal
-        run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
 
       - name: Check if the storage account exists
         run: az storage account show --name azureworkshopdemostorage --resource-group azureworkshop-demo-rg
