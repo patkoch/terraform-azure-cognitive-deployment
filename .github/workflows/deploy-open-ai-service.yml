@@ -11,6 +11,10 @@ on:
         options:
           - deploy
           - destroy
+  pull_request:
+    branches:
+      - main
+      - 'feature/**'
   
 jobs:
 
@@ -23,6 +27,44 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+      
+      - name: Check required GitHub secrets and tfvars variables
+        run: |
+          echo "╔══════════════════════════════════════════════════════════════════════╗"
+          echo "║           GitHub Secrets & terraform.auto.tfvars Check              ║"
+          echo "╠══════════════════════════════════════════════════════════════════════╣"
+          missing=0
+
+          # Check GitHub secrets
+          for secret in CLIENT_ID TENANT_ID SUBSCRIPTION_ID; do
+            if [ -z "${{ secrets[$secret] }}" ]; then
+              printf "║ %-40s ❌ MISSING ║\n" "$secret"
+              missing=1
+            else
+              printf "║ %-40s ✅ OK      ║\n" "$secret"
+            fi
+          done
+
+          echo "╠══════════════════════════════════════════════════════════════════════╣"
+
+          # Check tfvars variables
+          for var in cognitive_account_kind cognitive_account_name cognitive_account_sku_name cognitive_deployment_model_format cognitive_deployment_model_name cognitive_deployment_model_version cognitive_deployment_name cognitive_deployment_sku_name cognitive_deployment_sku_capacity resource_group_location resource_group_name; do
+            if grep -q "^$var" terraform.auto.tfvars; then
+              printf "║ %-40s ✅ OK      ║\n" "$var"
+            else
+              printf "║ %-40s ❌ MISSING ║\n" "$var"
+              missing=1
+            fi
+          done
+
+          echo "╚══════════════════════════════════════════════════════════════════════╝"
+
+          if [ "$missing" -eq 1 ]; then
+            echo "❌ Some required secrets or tfvars variables are missing."
+            exit 1
+          else
+            echo "✅ All required secrets and tfvars variables are set."
+          fi
 
       - name: 'Az CLI login'
         uses: azure/login@v1
