@@ -2,20 +2,16 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 4.1"
+      version = ">= 4.32"
     }
   }
 
   backend "azurerm" {
-    resource_group_name   = "azureworkshop-demo-rg"
-    storage_account_name  = "azureworkshopdemostorage"
-    container_name        = "tfstateopenai"
-    key                   = "terraform.tfstate"
+    resource_group_name  = "azureworkshop-demo-rg"
+    storage_account_name = "azureworkshopdemostorage"
+    container_name       = "tfstateopenai"
+    key                  = "terraform.tfstate"
   }
-}
 
-provider "azurerm" {
-  features {}
-
-  subscription_id = var.subscription_id
+  required_version = ">= 1.0.0"
 }

@@ -11,72 +11,214 @@ on:
         options:
           - deploy
           - destroy
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'openai-test'
-        type: choice
-        options:
-          - openai-test
-          - openai-prod
+  pull_request:
+    branches:
+      - main
+      - 'feature/**'
   
 jobs:
 
-  verification:
+  pr-verification:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
+      
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
 
-      - name: Decode the secret and save it as a .pem file
-        run: echo "${{ secrets.CLIENT_SECRET }}" | base64 --decode > cert.pem
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
 
-      - name: Login to Azure with the Service Principal
-        run: az login --service-principal -u ${{ secrets.CLIENT_ID }} --certificate cert.pem --tenant ${{ secrets.TENANT_ID }}
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: latest
+
+      - name: Set Terraform Environment Variables
+        run: |
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+      
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint --format=compact
+        continue-on-error: false
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: false
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+        continue-on-error: false
+
+      - name: Terraform Plan
+        id: plan
+        timeout-minutes: 10
+        run: terraform plan -no-color
+        continue-on-error: false
+      
+      - name: Update Pull Request
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+  verification:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      
+      - name: Check required GitHub secrets and tfvars variables
+        run: |
+          echo "╔══════════════════════════════════════════════════════════════════════╗"
+          echo "║           GitHub Secrets & terraform.auto.tfvars Check              ║"
+          echo "╠══════════════════════════════════════════════════════════════════════╣"
+          missing=0
+
+          # Check each secret explicitly
+          if [ -z "${{ secrets.CLIENT_ID }}" ]; then
+            printf "║ %-40s ❌ MISSING ║\n" "CLIENT_ID"
+            missing=1
+          else
+            printf "║ %-40s ✅ OK      ║\n" "CLIENT_ID"
+          fi
+
+          if [ -z "${{ secrets.TENANT_ID }}" ]; then
+            printf "║ %-40s ❌ MISSING ║\n" "TENANT_ID"
+            missing=1
+          else
+            printf "║ %-40s ✅ OK      ║\n" "TENANT_ID"
+          fi
+
+          if [ -z "${{ secrets.SUBSCRIPTION_ID }}" ]; then
+            printf "║ %-40s ❌ MISSING ║\n" "SUBSCRIPTION_ID"
+            missing=1
+          else
+            printf "║ %-40s ✅ OK      ║\n" "SUBSCRIPTION_ID"
+          fi
+
+          echo "╚══════════════════════════════════════════════════════════════════════╝"
+
+          if [ "$missing" -eq 1 ]; then
+            echo "❌ Some required secrets are missing."
+            exit 1
+          else
+            echo "✅ All required secrets are set."
+          fi
+
+          # Check tfvars variables
+          for var in cognitive_account_kind cognitive_account_name cognitive_account_sku_name cognitive_deployment_model_format cognitive_deployment_model_name cognitive_deployment_model_version cognitive_deployment_name cognitive_deployment_sku_name cognitive_deployment_sku_capacity resource_group_location resource_group_name; do
+            if grep -q "^$var" terraform.auto.tfvars; then
+              printf "║ %-40s ✅ OK      ║\n" "$var"
+            else
+              printf "║ %-40s ❌ MISSING ║\n" "$var"
+              missing=1
+            fi
+          done
+
+          echo "╚══════════════════════════════════════════════════════════════════════╝"
+
+          if [ "$missing" -eq 1 ]; then
+            echo "❌ Some required secrets or tfvars variables are missing."
+            exit 1
+          else
+            echo "✅ All required secrets and tfvars variables are set."
+          fi
+
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
 
       - name: Check if the storage account exists
         run: az storage account show --name azureworkshopdemostorage --resource-group azureworkshop-demo-rg
 
-  deploy:
+  create-plan:
     if: github.event.inputs.action == 'deploy'
     needs: verification
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
-      - name: Decode the secret and save it as a file
-        run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
+
+      - name: Set Terraform Environment Variables
+        run: |
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+      
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint --format=compact
+        continue-on-error: false
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
-   
-      - name: Configuration of Terraform for using the Client Certificate
-        run: |
-          echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
-          echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_CERTIFICATE_PATH=cert.pfx" >> $GITHUB_ENV
-          echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
-          echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
-      - name: Set environment variables used to serve as input variables
-        run: |
-          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-          echo "TF_VAR_resource_group_name=${{ vars.RESOURCE_GROUP_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_resource_group_location=${{ vars.RESOURCE_GROUP_LOCATION }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_account_name=${{ vars.COGNITIVE_ACCOUNT_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_account_kind=${{ vars.COGNITIVE_ACCOUNT_KIND }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_account_sku_name=${{ vars.COGNITIVE_ACCOUNT_SKU_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_name=${{ vars.COGNITIVE_DEPLOYMENT_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_model_format=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_FORMAT }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_model_name=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_model_version=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_VERSION }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_DEPLOYMENT_SKU_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt 
+        continue-on-error: false
 
       - name: Terraform Initialize 
         run: terraform init
@@ -85,16 +227,60 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        timeout-minutes: 10
         run: terraform plan -out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+          retention-days: 1
+      
+  deploy:
+    needs: create-plan
+    runs-on: ubuntu-latest
+    environment: production 
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
+      
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+   
+      - name: Set Terraform Environment Variables
+        run: |
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: terraform init
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
+        timeout-minutes: 10
 
   destroy:
     if: github.event.inputs.action == 'destroy'
     needs: verification
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
@@ -102,35 +288,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       
-      - name: Decode the secret and save it as a file
-        run: echo "${{ secrets.CLIENT_CERTIFICATE }}" | base64 --decode > cert.pfx
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
       
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Configuration of Terraform for using the Client Certificate
-        run: |
-          echo "ARM_CLIENT_ID=${{ secrets.CLIENT_ID }}" >> $GITHUB_ENV
-          echo "ARM_TENANT_ID=${{ secrets.TENANT_ID }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_CERTIFICATE_PATH=cert.pfx" >> $GITHUB_ENV
-          echo "ARM_CLIENT_CERTIFICATE_PASSWORD=${{ secrets.CLIENT_CERTIFICATE_PASSWORD }}" >> $GITHUB_ENV
-          echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-      
-      - name: Set environment variables used to serve as input variables
+      - name: Set Terraform Environment Variables
         run: |
           echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-          echo "TF_VAR_resource_group_name=${{ vars.RESOURCE_GROUP_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_resource_group_location=${{ vars.RESOURCE_GROUP_LOCATION }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_account_name=${{ vars.COGNITIVE_ACCOUNT_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_account_kind=${{ vars.COGNITIVE_ACCOUNT_KIND }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_account_sku_name=${{ vars.COGNITIVE_ACCOUNT_SKU_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_name=${{ vars.COGNITIVE_DEPLOYMENT_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_model_format=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_FORMAT }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_model_name=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_model_version=${{ vars.COGNITIVE_DEPLOYMENT_MODEL_VERSION }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_sku_name=${{ vars.COGNITIVE_DEPLOYMENT_SKU_NAME }}" >> $GITHUB_ENV
-          echo "TF_VAR_cognitive_deployment_sku_capacity=${{ vars.COGNITIVE_DEPLOYMENT_SKU_CAPACITY }}" >> $GITHUB_ENV
-
+      
       - name: Terraform Initialize 
         run: terraform init   
 
