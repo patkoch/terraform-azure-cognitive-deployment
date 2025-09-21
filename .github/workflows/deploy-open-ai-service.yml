@@ -95,7 +95,7 @@ jobs:
       - name: Check if the storage account exists
         run: az storage account show --name azureworkshopdemostorage --resource-group azureworkshop-demo-rg
 
-  deploy:
+  create-plan:
     if: github.event.inputs.action == 'deploy'
     needs: verification
     runs-on: ubuntu-latest
@@ -104,8 +104,8 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v5
+
       - name: 'Az CLI login'
         uses: azure/login@v1
         with:
@@ -113,12 +113,28 @@ jobs:
           tenant-id: ${{ secrets.TENANT_ID }}
           subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-   
       - name: Set Terraform Environment Variables
         run: |
           echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+      
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint --format=compact
+        continue-on-error: false
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt 
+        continue-on-error: false
 
       - name: Terraform Initialize 
         run: terraform init
@@ -127,10 +143,55 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        timeout-minutes: 10
         run: terraform plan -out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+          retention-days: 1
+      
+  deploy:
+    needs: create-plan
+    runs-on: ubuntu-latest
+    environment: production 
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          tenant-id: ${{ secrets.TENANT_ID }}
+          subscription-id: ${{ secrets.SUBSCRIPTION_ID }}
+      
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+   
+      - name: Set Terraform Environment Variables
+        run: |
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: terraform init
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
+        timeout-minutes: 10
 
   destroy:
     if: github.event.inputs.action == 'destroy'
