@@ -38,7 +38,6 @@ jobs:
     if: github.event.inputs.action == 'deploy'
     needs: verification
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
@@ -58,7 +57,7 @@ jobs:
    
       - name: Set Terraform Environment Variables
         run: |
-          echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
       - name: Terraform Initialize 
         run: terraform init
@@ -76,7 +75,6 @@ jobs:
     if: github.event.inputs.action == 'destroy'
     needs: verification
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
     permissions:
       id-token: write
       contents: read
@@ -94,9 +92,9 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Configuration of Terraform for using the Client Certificate
+      - name: Set Terraform Environment Variables
         run: |
-          echo "ARM_SUBSCRIPTION_ID=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
       
       - name: Terraform Initialize 
         run: terraform init   
