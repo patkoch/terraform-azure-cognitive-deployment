@@ -21,7 +21,7 @@ resource "azurerm_cognitive_deployment" "cd" {
   }
 
   sku {
-    name = var.cognitive_deployment_sku_name
+    name     = var.cognitive_deployment_sku_name
     capacity = var.cognitive_deployment_sku_capacity
   }
 }
