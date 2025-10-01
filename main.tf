@@ -1,9 +1,9 @@
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
-  #location = var.resource_group_location
+  location = var.resource_group_location
 }
 
-resource "azurerm_cognitive_account" "ca" {
+resource "azurerm_cognitive_account" "cax" {
   name                = var.cognitive_account_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
