@@ -1,4 +1,4 @@
-name: Open AI Service
+name: Open AI Service (${{ github.event.inputs.action }})
 
 on:
   workflow_dispatch:
