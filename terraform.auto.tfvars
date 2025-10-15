@@ -8,4 +8,4 @@ cognitive_deployment_name          = "open-ai-test-west-europe-cd"
 cognitive_deployment_sku_name      = "GlobalStandard"
 cognitive_deployment_sku_capacity  = 45
 resource_group_location            = "West Europe"
-resource_group_name                = "open-ai-test-west-europe-rg"
+resource_group_name                     = "open-ai-test-west-europe-rg"
