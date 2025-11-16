@@ -274,8 +274,36 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
+        id: apply
         run: terraform apply -auto-approve tfplan
         timeout-minutes: 10
+
+      - name: Generate Job Summary
+        if: always()
+        run: |
+          echo "# 🚀 Azure Cognitive Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Repository** | ${{ github.repository }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit SHA** | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Actor** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Timestamp** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Terraform Apply Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ steps.apply.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Environment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: production" >> $GITHUB_STEP_SUMMARY
+          echo "- **Runner OS**: ${{ runner.os }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.apply.outcome }}" == "success" ]; then
+            echo "✅ **Deployment completed successfully**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Deployment failed**" >> $GITHUB_STEP_SUMMARY
+          fi
 
   destroy:
     if: github.event.inputs.action == 'destroy'
@@ -306,4 +334,31 @@ jobs:
         run: terraform init   
 
       - name: Terraform Destroy
+        id: destroy
         run: terraform destroy -auto-approve
+
+      - name: Generate Job Summary
+        if: always()
+        run: |
+          echo "# 🗑️ Azure Cognitive Destruction Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Destruction Details" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Repository** | ${{ github.repository }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit SHA** | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Actor** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Timestamp** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Terraform Destroy Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ steps.destroy.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Environment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Runner OS**: ${{ runner.os }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.destroy.outcome }}" == "success" ]; then
+            echo "✅ **Resources destroyed successfully**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Destruction failed**" >> $GITHUB_STEP_SUMMARY
+          fi
