@@ -7,7 +7,7 @@ resource "azurerm_cognitive_account" "ca" {
   name                = var.cognitive_account_name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  kind                    = var.cognitive_account_kind
+  kind                = var.cognitive_account_kind
   sku_name            = var.cognitive_account_sku_name
 }
 
