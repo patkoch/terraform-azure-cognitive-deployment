@@ -1,6 +1,6 @@
 # Resource Group
 module "resource_group" {
-  source = "git::https://github.com/patkoch/terraform-modules//azurerm/resource-group?ref=main"
+  source = "git::https://github.com/patkoch/terraform-modules//azurerm/resource-group?ref=v1.0.0"
 
   name     = var.resource_group_name
   location = var.resource_group_location
@@ -9,7 +9,7 @@ module "resource_group" {
 
 # Cognitive Account (OpenAI)
 module "cognitive_account" {
-  source = "git::https://github.com/patkoch/terraform-modules//azurerm/cognitive-account?ref=main"
+  source = "git::https://github.com/patkoch/terraform-modules//azurerm/cognitive-account?ref=v1.0.0"
 
   name                      = var.cognitive_account_name
   location                  = module.resource_group.location
@@ -29,7 +29,7 @@ module "cognitive_account" {
 
 # Cognitive Deployment (GPT-4o Model)
 module "cognitive_deployment" {
-  source = "git::https://github.com/patkoch/terraform-modules//azurerm/cognitive-deployment?ref=main"
+  source = "git::https://github.com/patkoch/terraform-modules//azurerm/cognitive-deployment?ref=v1.0.0"
 
   deployment_name      = var.cognitive_deployment_name
   cognitive_account_id = module.cognitive_account.id
