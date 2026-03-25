@@ -61,7 +61,7 @@ variable "cognitive_deployment_name" {
   description = "Name of the cognitive deployment"
 }
 
-variable "cognitive_deployment_model_format" {
+variable "cognitive_deployment_model_format_wrong" {
   type        = string
   description = "Format of the model of the cognitive deployment"
 }
