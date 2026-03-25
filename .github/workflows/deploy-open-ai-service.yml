@@ -25,6 +25,7 @@ jobs:
       id-token: write
       contents: read
       pull-requests: write
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -49,15 +50,16 @@ jobs:
           echo "TF_VAR_subscription_id=${{ secrets.SUBSCRIPTION_ID }}" >> $GITHUB_ENV
       
       - name: Run TFLint
+        id: tflint
         run: |
           tflint --init
-          tflint --format=compact
-        continue-on-error: false
+          tflint --format=compact 2>&1 | tee /tmp/tflint_output.txt
+        continue-on-error: true
 
       - name: Terraform Format Check
         id: fmt
-        run: terraform fmt -check -recursive
-        continue-on-error: false
+        run: terraform fmt -check -recursive 2>&1 | tee /tmp/fmt_output.txt
+        continue-on-error: true
 
       - name: Terraform Init
         id: init
@@ -65,18 +67,19 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate
-        continue-on-error: false
+        run: terraform validate 2>&1 | tee /tmp/validate_output.txt
+        continue-on-error: true
 
       - name: Terraform Plan
         id: plan
         timeout-minutes: 10
+        if: steps.tflint.outcome == 'success' && steps.fmt.outcome == 'success' && steps.validate.outcome == 'success'
         run: terraform plan -no-color
         continue-on-error: false
       
       - name: Update Pull Request
         uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         env:
           PLAN: "${{ steps.plan.outputs.stdout }}"
         with:
@@ -101,6 +104,89 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
+
+      - name: Trigger Copilot Coding Agent on validation failure
+        if: always() && (steps.tflint.outcome == 'failure' || steps.fmt.outcome == 'failure' || steps.validate.outcome == 'failure')
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            const readOutput = (filePath) => {
+              try {
+                return fs.readFileSync(filePath, 'utf8').trim() || 'No output captured';
+              } catch(e) {
+                return 'Output not available';
+              }
+            };
+
+            let errorDetails = '';
+
+            if ('${{ steps.tflint.outcome }}' === 'failure') {
+              const output = readOutput('/tmp/tflint_output.txt');
+              errorDetails += `### TFLint Errors\n\`\`\`\n${output}\n\`\`\`\n\n`;
+            }
+
+            if ('${{ steps.fmt.outcome }}' === 'failure') {
+              const output = readOutput('/tmp/fmt_output.txt');
+              errorDetails += `### Terraform Format Errors\nRun \`terraform fmt -recursive\` to fix the formatting:\n\`\`\`\n${output}\n\`\`\`\n\n`;
+            }
+
+            if ('${{ steps.validate.outcome }}' === 'failure') {
+              const output = readOutput('/tmp/validate_output.txt');
+              errorDetails += `### Terraform Validate Errors\n\`\`\`\n${output}\n\`\`\`\n\n`;
+            }
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const sha = context.sha ? context.sha.substring(0, 7) : 'unknown';
+            const prRef = context.payload.pull_request ? context.payload.pull_request.head.ref : context.ref;
+
+            const issueBody = [
+              '## Automated Fix Request',
+              '',
+              'The following Terraform validation checks failed in the CI pipeline.',
+              '',
+              `- **Branch:** \`${prRef}\``,
+              `- **Commit:** \`${sha}\``,
+              `- **Workflow run:** [View logs](${runUrl})`,
+              '',
+              'Please analyze the errors below and create a pull request with the necessary fixes.',
+              '',
+              errorDetails,
+              '---',
+              '*This issue was automatically created by the CI pipeline.*',
+              '',
+              '@copilot please fix the Terraform validation errors listed above.'
+            ].join('\n');
+
+            let issue;
+            try {
+              issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Automated Fix] Terraform validation errors - ${sha}`,
+                body: issueBody
+              });
+              core.notice(`Copilot Coding Agent issue created: ${issue.data.html_url}`);
+            } catch(e) {
+              core.warning(`Failed to create issue: ${e.message}`);
+            }
+
+            if (issue) {
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.data.number,
+                  assignees: ['copilot']
+                });
+              } catch(e) {
+                core.warning(`Could not assign issue to Copilot: ${e.message}`);
+              }
+            }
+
+            core.setFailed('Terraform validation checks failed. A Copilot Coding Agent issue has been created to fix the errors automatically.');
 
   verification:
     runs-on: ubuntu-latest
@@ -186,6 +272,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -207,26 +294,113 @@ jobs:
           tflint_version: latest
 
       - name: Run TFLint
+        id: tflint
         run: |
           tflint --init
-          tflint --format=compact
-        continue-on-error: false
+          tflint --format=compact 2>&1 | tee /tmp/tflint_output.txt
+        continue-on-error: true
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
       - name: Terraform Format Check
         id: fmt
-        run: terraform fmt 
-        continue-on-error: false
+        run: terraform fmt 2>&1 | tee /tmp/fmt_output.txt
+        continue-on-error: true
 
       - name: Terraform Initialize 
         run: terraform init
 
       - name: Terraform Validate
-        run: terraform validate
+        id: validate
+        run: terraform validate 2>&1 | tee /tmp/validate_output.txt
+        continue-on-error: true
+
+      - name: Trigger Copilot Coding Agent on validation failure
+        if: always() && (steps.tflint.outcome == 'failure' || steps.fmt.outcome == 'failure' || steps.validate.outcome == 'failure')
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            const readOutput = (filePath) => {
+              try {
+                return fs.readFileSync(filePath, 'utf8').trim() || 'No output captured';
+              } catch(e) {
+                return 'Output not available';
+              }
+            };
+
+            let errorDetails = '';
+
+            if ('${{ steps.tflint.outcome }}' === 'failure') {
+              const output = readOutput('/tmp/tflint_output.txt');
+              errorDetails += `### TFLint Errors\n\`\`\`\n${output}\n\`\`\`\n\n`;
+            }
+
+            if ('${{ steps.fmt.outcome }}' === 'failure') {
+              const output = readOutput('/tmp/fmt_output.txt');
+              errorDetails += `### Terraform Format Errors\nRun \`terraform fmt\` to apply the formatting:\n\`\`\`\n${output}\n\`\`\`\n\n`;
+            }
+
+            if ('${{ steps.validate.outcome }}' === 'failure') {
+              const output = readOutput('/tmp/validate_output.txt');
+              errorDetails += `### Terraform Validate Errors\n\`\`\`\n${output}\n\`\`\`\n\n`;
+            }
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const sha = context.sha ? context.sha.substring(0, 7) : 'unknown';
+            const branch = context.ref.replace('refs/heads/', '');
+
+            const issueBody = [
+              '## Automated Fix Request',
+              '',
+              'The following Terraform validation checks failed in the CI pipeline.',
+              '',
+              `- **Branch:** \`${branch}\``,
+              `- **Commit:** \`${sha}\``,
+              `- **Workflow run:** [View logs](${runUrl})`,
+              '',
+              'Please analyze the errors below and create a pull request with the necessary fixes.',
+              '',
+              errorDetails,
+              '---',
+              '*This issue was automatically created by the CI pipeline.*',
+              '',
+              '@copilot please fix the Terraform validation errors listed above.'
+            ].join('\n');
+
+            let issue;
+            try {
+              issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Automated Fix] Terraform validation errors - ${sha}`,
+                body: issueBody
+              });
+              core.notice(`Copilot Coding Agent issue created: ${issue.data.html_url}`);
+            } catch(e) {
+              core.warning(`Failed to create issue: ${e.message}`);
+            }
+
+            if (issue) {
+              try {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.data.number,
+                  assignees: ['copilot']
+                });
+              } catch(e) {
+                core.warning(`Could not assign issue to Copilot: ${e.message}`);
+              }
+            }
+
+            core.setFailed('Terraform validation checks failed. A Copilot Coding Agent issue has been created to fix the errors automatically.');
 
       - name: Terraform Plan
+        if: steps.tflint.outcome == 'success' && steps.fmt.outcome == 'success' && steps.validate.outcome == 'success'
         timeout-minutes: 10
         run: terraform plan -out=tfplan
 
