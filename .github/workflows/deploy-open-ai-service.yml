@@ -52,13 +52,16 @@ jobs:
       - name: Run TFLint
         id: tflint
         run: |
+          set -o pipefail
           tflint --init
           tflint --format=compact 2>&1 | tee /tmp/tflint_output.txt
         continue-on-error: true
 
       - name: Terraform Format Check
         id: fmt
-        run: terraform fmt -check -recursive 2>&1 | tee /tmp/fmt_output.txt
+        run: |
+          set -o pipefail
+          terraform fmt -check -recursive 2>&1 | tee /tmp/fmt_output.txt
         continue-on-error: true
 
       - name: Terraform Init
@@ -67,7 +70,9 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate 2>&1 | tee /tmp/validate_output.txt
+        run: |
+          set -o pipefail
+          terraform validate 2>&1 | tee /tmp/validate_output.txt
         continue-on-error: true
 
       - name: Terraform Plan
@@ -296,6 +301,7 @@ jobs:
       - name: Run TFLint
         id: tflint
         run: |
+          set -o pipefail
           tflint --init
           tflint --format=compact 2>&1 | tee /tmp/tflint_output.txt
         continue-on-error: true
@@ -305,7 +311,9 @@ jobs:
 
       - name: Terraform Format Check
         id: fmt
-        run: terraform fmt 2>&1 | tee /tmp/fmt_output.txt
+        run: |
+          set -o pipefail
+          terraform fmt 2>&1 | tee /tmp/fmt_output.txt
         continue-on-error: true
 
       - name: Terraform Initialize 
@@ -313,7 +321,9 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate 2>&1 | tee /tmp/validate_output.txt
+        run: |
+          set -o pipefail
+          terraform validate 2>&1 | tee /tmp/validate_output.txt
         continue-on-error: true
 
       - name: Trigger Copilot Coding Agent on validation failure
