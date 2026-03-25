@@ -78,7 +78,7 @@ variable "cognitive_deployment_model_version" {
 
 variable "cognitive_deployment_sku_name" {
   type        = string
-  description = "Name of the sku of the cognitive deployment"
+  description =       "Name of the sku of the cognitive deployment"
 }
 
 variable "cognitive_deployment_sku_capacity" {
