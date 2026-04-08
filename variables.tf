@@ -36,7 +36,7 @@ variable "cognitive_account_sku_name" {
   description = "SKU name of the cognitive account"
 }
 
-variable "cognitive_account_custom_subdomain_name_wrong" {
+variable "cognitive_account_custom_subdomain_name" {
   type        = string
   description = "Custom subdomain name of the cognitive account"
   default     = null
