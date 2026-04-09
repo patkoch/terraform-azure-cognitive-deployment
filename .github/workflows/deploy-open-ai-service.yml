@@ -113,7 +113,7 @@ jobs:
         if: always() && (steps.tflint.outcome == 'failure' || steps.fmt.outcome == 'failure' || steps.validate.outcome == 'failure')
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.COPILOT_TRIGGER_PAT }}
           script: |
             const fs = require('fs');
 
