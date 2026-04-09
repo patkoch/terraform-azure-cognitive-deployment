@@ -25,7 +25,6 @@ jobs:
       id-token: write
       contents: read
       pull-requests: write
-      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -145,53 +144,35 @@ jobs:
 
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const sha = context.sha ? context.sha.substring(0, 7) : 'unknown';
-            const prRef = context.payload.pull_request ? context.payload.pull_request.head.ref : context.ref;
+            const sourceBranch = context.payload.pull_request.head.ref;
+            const prNumber = context.payload.pull_request.number;
 
-            const issueBody = [
-              '## Automated Fix Request',
+            const commentBody = [
+              '## ❌ Terraform Validation Failed – Automated Fix Requested',
               '',
-              'The following Terraform validation checks failed in the CI pipeline.',
+              `The following checks failed for commit \`${sha}\` in this pull request.`,
               '',
-              `- **Branch:** \`${prRef}\``,
-              `- **Commit:** \`${sha}\``,
+              `- **Source branch:** \`${sourceBranch}\``,
               `- **Workflow run:** [View logs](${runUrl})`,
-              '',
-              'Please analyze the errors below and create a pull request with the necessary fixes.',
               '',
               errorDetails,
               '---',
-              '*This issue was automatically created by the CI pipeline.*',
-              '',
-              '@copilot please fix the Terraform validation errors listed above.'
+              `@copilot Please analyze the errors above and fix them. Create a new branch derived from \`${sourceBranch}\` and open a pull request targeting \`${sourceBranch}\` with the necessary fixes, so that once the fix is merged the original pull request passes all validation checks.`
             ].join('\n');
 
-            let issue;
             try {
-              issue = await github.rest.issues.create({
+              await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: `[Automated Fix] Terraform validation errors - ${sha}`,
-                body: issueBody
+                issue_number: prNumber,
+                body: commentBody
               });
-              core.notice(`Copilot Coding Agent issue created: ${issue.data.html_url}`);
+              core.notice(`Copilot Coding Agent triggered via comment on PR #${prNumber}`);
             } catch(e) {
-              core.warning(`Failed to create issue: ${e.message}`);
+              core.warning(`Failed to post PR comment: ${e.message}`);
             }
 
-            if (issue) {
-              try {
-                await github.rest.issues.addAssignees({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.data.number,
-                  assignees: ['copilot']
-                });
-              } catch(e) {
-                core.warning(`Could not assign issue to Copilot: ${e.message}`);
-              }
-            }
-
-            core.setFailed('Terraform validation checks failed. A Copilot Coding Agent issue has been created to fix the errors automatically.');
+            core.setFailed('Terraform validation checks failed. Copilot Coding Agent has been triggered via a PR comment to fix the errors automatically.');
 
   verification:
     runs-on: ubuntu-latest
