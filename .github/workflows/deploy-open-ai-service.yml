@@ -110,12 +110,15 @@ jobs:
             })
 
       - name: Trigger Copilot Coding Agent on validation failure
+        id: copilot-trigger
         if: always() && (steps.tflint.outcome == 'failure' || steps.fmt.outcome == 'failure' || steps.validate.outcome == 'failure')
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.COPILOT_TRIGGER_PAT }}
           script: |
             const fs = require('fs');
+
+            core.setOutput('triggerTimestamp', new Date().toISOString());
 
             const readOutput = (filePath) => {
               try {
@@ -178,6 +181,58 @@ jobs:
             }
 
             core.setFailed('Terraform validation checks failed. Copilot Coding Agent has been triggered via a PR comment to fix the errors automatically.');
+
+      - name: Post Copilot run link
+        if: always() && (steps.tflint.outcome == 'failure' || steps.fmt.outcome == 'failure' || steps.validate.outcome == 'failure')
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.notice('No pull_request context found; skipping Copilot run link comment.');
+              return;
+            }
+            const prNumber = pr.number;
+            const triggerTimestamp = '${{ steps.copilot-trigger.outputs.triggerTimestamp }}';
+            const triggerTime = triggerTimestamp ? new Date(triggerTimestamp) : new Date(Date.now() - 120000);
+
+            async function sleep(ms) {
+              return new Promise(r => setTimeout(r, ms));
+            }
+
+            let copilotRunUrl = null;
+            const maxAttempts = 8;
+            const intervalMs = 15000;
+
+            for (let i = 0; i < maxAttempts; i++) {
+              if (i > 0) await sleep(intervalMs);
+
+              const { data } = await github.rest.actions.listWorkflowRunsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                event: 'dynamic',
+                per_page: 10
+              });
+
+              const run = data.workflow_runs.find(r => new Date(r.created_at) >= triggerTime);
+              if (run) {
+                copilotRunUrl = run.html_url;
+                break;
+              }
+            }
+
+            if (copilotRunUrl) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `🤖 **Copilot is now processing the fix** – [View Copilot agent run](${copilotRunUrl})`
+              });
+              core.notice(`Posted Copilot run link: ${copilotRunUrl}`);
+            } else {
+              core.notice('Copilot run not found within timeout; skipping follow-up comment.');
+            }
 
   verification:
     runs-on: ubuntu-latest
