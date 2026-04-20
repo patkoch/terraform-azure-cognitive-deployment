@@ -56,7 +56,7 @@ variable "cognitive_account_tags" {
   }
 }
 
-variable "cognitive_deployment" {
+variable "cognitive_deployment_name" {
   type        = string
   description = "Name of the cognitive deployment"
 }
