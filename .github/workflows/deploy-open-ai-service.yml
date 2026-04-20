@@ -22,6 +22,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       id-token: write
       contents: read
       pull-requests: write
