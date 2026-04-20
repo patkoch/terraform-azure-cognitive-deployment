@@ -155,6 +155,11 @@ jobs:
             }
             const sourceBranch = pr.head.ref;
             const prNumber = pr.number;
+            const triggerTime = new Date();
+
+            async function sleep(ms) {
+              return new Promise(r => setTimeout(r, ms));
+            }
 
             const commentBody = [
               '## ❌ Terraform Validation Failed – Automated Fix Requested',
@@ -176,7 +181,38 @@ jobs:
                 issue_number: prNumber,
                 body: commentBody
               });
-              core.notice(`Copilot Coding Agent triggered via comment on PR #${prNumber}`);
+
+              let copilotFixPrUrl = null;
+              const maxAttempts = 6;
+              const intervalMs = 10000;
+
+              for (let i = 0; i < maxAttempts; i++) {
+                if (i > 0) await sleep(intervalMs);
+
+                const { data: pulls } = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  base: sourceBranch,
+                  sort: 'created',
+                  direction: 'desc',
+                  per_page: 20
+                });
+
+                const fixPr = pulls.find(p => p.number !== prNumber && new Date(p.created_at) >= triggerTime);
+                if (fixPr) {
+                  copilotFixPrUrl = fixPr.html_url;
+                  break;
+                }
+              }
+
+              core.setOutput('copilotFixPrUrl', copilotFixPrUrl || '');
+
+              if (copilotFixPrUrl) {
+                core.notice(`Copilot Coding Agent triggered via comment on PR #${prNumber}. Fix PR: ${copilotFixPrUrl}`);
+              } else {
+                core.notice(`Copilot Coding Agent triggered via comment on PR #${prNumber}. Fix PR link is not available yet.`);
+              }
             } catch(e) {
               core.warning(`Failed to post PR comment: ${e.message}`);
             }
