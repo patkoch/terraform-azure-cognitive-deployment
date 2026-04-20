@@ -31,7 +31,7 @@ variable "cognitive_account_kind" {
   description = "Type of the cognitive account"
 }
 
-variable "cognitive_account_sku_name_wrong" {
+variable "cognitive_account_sku_name" {
   type        = string
   description = "SKU name of the cognitive account"
 }
