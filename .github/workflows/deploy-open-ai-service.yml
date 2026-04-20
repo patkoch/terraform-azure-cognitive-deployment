@@ -195,7 +195,11 @@ jobs:
             }
             const prNumber = pr.number;
             const triggerTimestamp = '${{ steps.copilot-trigger.outputs.triggerTimestamp }}';
-            const triggerTime = triggerTimestamp ? new Date(triggerTimestamp) : new Date(Date.now() - 120000);
+            if (!triggerTimestamp) {
+              core.notice('No trigger timestamp available; skipping Copilot run link comment.');
+              return;
+            }
+            const triggerTime = new Date(triggerTimestamp);
 
             async function sleep(ms) {
               return new Promise(r => setTimeout(r, ms));
