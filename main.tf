@@ -45,7 +45,3 @@ module "cognitive_deployment" {
 
   depends_on = [module.cognitive_account]
 }
-
-output "cognitive_account_endpoint" {
-  value = module.cognitive_account.endpoint
-}
