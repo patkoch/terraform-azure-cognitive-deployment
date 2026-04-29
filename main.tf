@@ -47,5 +47,5 @@ module "cognitive_deployment" {
 }
 
 output "cognitive_account_endpoint" {
-  value = module.cognitive_account.cognitive_service_account_sku_name
+  value = module.cognitive_account.endpoint
 }
