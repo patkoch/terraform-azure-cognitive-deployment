@@ -16,6 +16,7 @@ cognitive_account_tags = {
   Environment = "Test"
   Service     = "OpenAI"
   ManagedBy   = "Terraform"
+  # comment
 }
 
 cognitive_deployment_name                   = "open-ai-test-west-europe-cd"
