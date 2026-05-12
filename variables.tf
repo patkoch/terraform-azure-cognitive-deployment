@@ -26,7 +26,7 @@ variable "cognitive_account_name" {
   description = "Name of the cognitive account"
 }
 
-variable "cognitive_account_kind_worng_nanme" {
+variable "cognitive_account_kind" {
   type        = string
   description = "Type of the cognitive account"
 }
