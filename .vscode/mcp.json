@@ -2,9 +2,9 @@
   "servers": {
     "azure-model-region": {
       "type": "stdio",
-      "command": "/home/patrick/github/terraform-azure-cognitive-deployment/mcp-server/.venv/bin/python",
+      "command": "./mcp-server/.venv/bin/python",
       "args": [
-        "/home/patrick/github/terraform-azure-cognitive-deployment/mcp-server/server.py"
+        "./mcp-server/server.py"
       ]
     }
   }
