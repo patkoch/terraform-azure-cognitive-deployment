@@ -18,6 +18,57 @@ After the deployment, it is possible to conduct a chat by using a Python script 
   <img src="pictures/15_send_requests.png" width="100%" height="100%" title="15_send_requests">
 </p>
 
+# Copilot Skills for this repository
+
+This repository now contains dedicated Copilot Skills in `.github/skills/`.
+
+Skills are task-specific workflows that can be loaded on demand. They complement the Terraform agent in `.github/agents/terraform-agent.md`.
+
+- Agent: always-on project rules and boundaries
+- Skills: concrete, repeatable workflows for recurring tasks
+
+## Included Skills
+
+### 1) terraform-preflight
+
+Location: `.github/skills/terraform-preflight/SKILL.md`
+
+Purpose:
+- Run a safe local quality gate before creating or updating a pull request
+- Check formatting, initialization, validation, and linting
+
+Typical checks:
+- `terraform fmt -check -recursive`
+- `terraform init -upgrade -backend=false`
+- `terraform validate`
+- `tflint`
+
+Concrete examples:
+- Example prompt 1: "Run terraform-preflight for my current branch and list all findings."
+- Example prompt 2: "Before I open a PR, execute terraform-preflight and tell me what I need to fix."
+
+### 2) terraform-plan-review
+
+Location: `.github/skills/terraform-plan-review/SKILL.md`
+
+Purpose:
+- Generate a Terraform plan and explain expected changes in review-friendly language
+- Highlight risky or destructive changes before apply
+
+Typical checks:
+- `terraform plan -out tfplan`
+- `terraform show tfplan`
+
+Concrete examples:
+- Example prompt 1: "Use terraform-plan-review and summarize add/change/destroy for this branch."
+- Example prompt 2: "Create a PR-ready summary from the current Terraform plan and point out risk areas."
+
+## When to use what
+
+- Use the agent for all Terraform and workflow changes in this repo.
+- Use `terraform-preflight` whenever you need a fast quality gate.
+- Use `terraform-plan-review` whenever you need to communicate impact clearly in a PR.
+
 # Prepare the terraform.tfvars file
 
 Create a new file inside the checked out directory of this repository, named "terraform.tfvars". The content of it can be seen in the code snippet below - there are 12 values to assign to predefined variables:
