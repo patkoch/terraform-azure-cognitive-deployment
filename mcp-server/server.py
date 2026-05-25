@@ -104,6 +104,30 @@ def _strip_html(value: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def _normalize_key(value: str) -> str:
+    """Normalize model/region keys for lookups."""
+    return _strip_html(value).lower()
+
+
+def _normalize_region(value: str) -> str:
+    """Normalize a region name to a Terraform/Azure-friendly token."""
+    return _normalize_key(value).replace(" ", "")
+
+
+def _base_model_name(model_name: str) -> str:
+    """Return model name without trailing parenthesized version suffix."""
+    base = re.sub(r"\s*\([^)]*\)\s*$", "", model_name)
+    return re.sub(r"\s+", " ", base).strip().lower()
+
+
+def _cell_indicates_support(cell: str) -> bool:
+    """Return True if the table cell indicates regional support."""
+    marker = _normalize_key(cell)
+    if not marker:
+        return False
+    return marker not in {"-", "--", "n/a", "na", "no", "not available", "❌", "x"}
+
+
 def _parse_region_model_table(page_html: str) -> dict[str, list[str]]:
     """Parse the Microsoft Learn region/model table.
 
@@ -117,40 +141,74 @@ def _parse_region_model_table(page_html: str) -> dict[str, list[str]]:
     names (e.g. ``swedencentral`` or ``East US``).
     """
     tables = re.findall(r"<table[^>]*>.*?</table>", page_html, flags=re.IGNORECASE | re.DOTALL)
+    merged: dict[str, set[str]] = {}
     for table_html in tables:
         if "swedencentral" not in table_html.lower() and "sweden central" not in table_html.lower():
             continue
+
         rows = re.findall(r"<tr[^>]*>(.*?)</tr>", table_html, flags=re.IGNORECASE | re.DOTALL)
         if not rows:
             continue
 
-        # Header
-        header_cells = re.findall(
-            r"<t[hd][^>]*>(.*?)</t[hd]>", rows[0], flags=re.IGNORECASE | re.DOTALL
-        )
-        headers = [_strip_html(c).lower().replace(" ", "") for c in header_cells]
-        if not headers:
+        matrix: list[list[str]] = []
+        for row_html in rows:
+            cells = re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", row_html, flags=re.IGNORECASE | re.DOTALL)
+            if cells:
+                matrix.append([_strip_html(c) for c in cells])
+
+        if len(matrix) < 2:
             continue
 
-        result: dict[str, list[str]] = {}
-        for row_html in rows[1:]:
-            cells = re.findall(
-                r"<t[hd][^>]*>(.*?)</t[hd]>", row_html, flags=re.IGNORECASE | re.DOTALL
-            )
-            if len(cells) < 2:
-                continue
-            model = _strip_html(cells[0]).lower()
-            if not model:
-                continue
-            supported: list[str] = []
-            for region_header, cell in zip(headers[1:], cells[1:]):
-                if _strip_html(cell):
-                    supported.append(region_header)
-            if supported:
-                result[model] = supported
-        if result:
-            return result
+        headers = matrix[0]
+        first_header = _normalize_key(headers[0])
+
+        # Current Learn markup is usually region-first: Region | gpt-5 | gpt-4o ...
+        if first_header in {"region", "regions"}:
+            model_headers = [_normalize_key(h) for h in headers[1:]]
+            for row in matrix[1:]:
+                if len(row) < 2:
+                    continue
+                region = _normalize_region(row[0])
+                if not region:
+                    continue
+                for model_name, cell in zip(model_headers, row[1:]):
+                    if not model_name or not _cell_indicates_support(cell):
+                        continue
+                    merged.setdefault(model_name, set()).add(region)
+            continue
+
+        # Backward compatibility: model-first table layout.
+        if first_header in {"model", "models"}:
+            region_headers = [_normalize_region(h) for h in headers[1:]]
+            for row in matrix[1:]:
+                if len(row) < 2:
+                    continue
+                model_name = _normalize_key(row[0])
+                if not model_name:
+                    continue
+                for region, cell in zip(region_headers, row[1:]):
+                    if not region or not _cell_indicates_support(cell):
+                        continue
+                    merged.setdefault(model_name, set()).add(region)
+
+    if merged:
+        return {model: sorted(regions) for model, regions in merged.items()}
     raise ValueError("Could not locate the region/model table on the page")
+
+
+def _regions_for_model(table: dict[str, list[str]], model_name: str) -> list[str]:
+    """Resolve regions for a model, including versioned model-name variants."""
+    key = model_name.strip().lower()
+    regions = table.get(key, [])
+    if regions:
+        return regions
+
+    base = _base_model_name(key)
+    merged: set[str] = set()
+    for candidate, candidate_regions in table.items():
+        if _base_model_name(candidate) == base:
+            merged.update(candidate_regions)
+    return sorted(merged)
 
 
 def _fetch_live_table() -> dict[str, list[str]]:
@@ -200,8 +258,7 @@ def list_regions_for_model(model_name: str) -> dict[str, Any]:
         or ``"fallback"`` when the built-in static table was used.
     """
     entry = _get_table()
-    key = model_name.strip().lower()
-    regions = entry.table.get(key, [])
+    regions = _regions_for_model(entry.table, model_name)
     return {
         "model": model_name,
         "regions": regions,
@@ -256,7 +313,7 @@ def get_recommended_tfvars(model_name: str) -> dict[str, Any]:
     """
     entry = _get_table()
     key = model_name.strip().lower()
-    regions = entry.table.get(key, [])
+    regions = _regions_for_model(entry.table, model_name)
     if not regions:
         return {
             "model": model_name,
