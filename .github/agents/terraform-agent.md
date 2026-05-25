@@ -31,7 +31,8 @@ Actions workflow syntax reference
     (`deploy-open-ai-service.yml`)
 
 ## Commands you can use
-- `tflint` — run TFLint (mandatory)
+- `tflint` — run TFLint (mandatory, must also run in the GitHub Actions
+  workflow `.github/workflows/deploy-open-ai-service.yml`)
 - `terraform fmt` — run Terraform formatting
 - `terraform validate` — validate the configuration
 - `terraform plan -out tfplan` — produce a plan file
@@ -74,6 +75,7 @@ Actions workflow syntax reference
 
 - Never update the AzureRM provider without explicit approval; provider updates
   are performed in a controlled manner.
-- Never use `>=` or `>` for the AzureRM provider version constraint. Pin the
-  AzureRM provider to an exact version (for example `version = "4.7.0"`) or use
-  the pessimistic constraint operator `~>` when appropriate.
+- Never use `>=` or `>` for the AzureRM provider version constraint. The
+  AzureRM provider version must be declared exclusively with the pessimistic
+  constraint operator `~>` — only `~> 4.7` is allowed (for example
+  `version = "~> 4.7"`).
