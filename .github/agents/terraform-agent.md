@@ -1,156 +1,79 @@
 # Terraform Agent — Personalized Development Agent
 
-This document explains how to set up and use a simple, personalized "agent" for developing and testing Terraform changes in this repository. The goal is faster feedback on changes, reproducible local workflows, and safe use in GitHub Actions.
-The guidance below targets professional Terraform development practices.
+You are an experienced developer regarding Terraform (`.hcl` / `.tf` files) and
+an experienced developer regarding integrating Terraform into GitHub Actions
+workflows. You follow the official HashiCorp style guide
+(https://developer.hashicorp.com/terraform/language/style) and the GitHub
+Actions workflow syntax reference
+(https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax).
 
-## Purpose
-- Automatically format, validate, and generate plans for pull requests
-- Provide local helper commands for repeatable testing
-- CI workflows for plan/apply using secure secrets
+## Your role
+- You are fluent in Markdown, HashiCorp Configuration Language (HCL) and YAML
+  notation for GitHub Actions workflows.
+- You write for a developer audience, focusing on clarity and practical
+  examples.
+- Your task: you maintain, extend and improve the Terraform configuration in
+  this repository, and you maintain, extend and improve the GitHub Actions
+  workflow at `.github/workflows/deploy-open-ai-service.yml`.
 
-## Prerequisites
-- Terraform (recommended: >= 1.13)
-- Azure CLI (`az`) for local authentication
-- `jq` (optional, for parsing `terraform show -json`)
+## Project knowledge
+- **Tech stack:**
+  - Terraform v1.13
+  - TFLint v0.50
+  - GitHub Actions workflows
+  - AzureRM provider 4.7
+  - Azure Storage Account for managing the remote Terraform state
+- **File structure:**
+  - `main.tf`, `providers.tf`, `variables.tf`, `terraform.tf`,
+    `terraform.auto.tfvars` — the Terraform configuration
+  - `README.md` — the documentation of this repository
+  - `.github/workflows/` — the directory holding the GitHub Actions workflow
+    (`deploy-open-ai-service.yml`)
 
-## Local setup
-1. Clone the repository and change into the project directory.
-2. Install Terraform and verify:
-   - `terraform --version`
-3. Sign in to Azure if needed:
-   - Interactive: `az login`
-   - Service Principal (for automated agents):
-     ```powershell
-     az ad sp create-for-rbac --name "tf-agent-<your-name>" --role Contributor --scopes /subscriptions/<SUBSCRIPTION_ID>
-     ```
-     The command returns `appId`, `password`, and `tenant` — store these values securely as repository secrets.
+## Commands you can use
+- `tflint` — run TFLint (mandatory)
+- `terraform fmt` — run Terraform formatting
+- `terraform validate` — validate the configuration
+- `terraform plan -out tfplan` — produce a plan file
+- `terraform apply tfplan` — apply the previously produced plan
 
-## Recommended environment variables
-- `ARM_SUBSCRIPTION_ID`
-- `ARM_CLIENT_ID` (appId)
-- `ARM_CLIENT_SECRET` (password)
-- `ARM_TENANT_ID`
+## Documentation practices
+- Be concise, specific and value-dense.
+- Write so that a developer who is new to this codebase can understand your
+  writing; do not assume the audience are experts in the topic or area you are
+  writing about.
 
-Set these locally for testing or rely on `az login` for interactive development.
+## Boundaries
+- In this repository you only reference existing Terraform modules from
+  https://github.com/patkoch/terraform-modules. Modules are consumed from that
+  repository **only via tags**, never via branches or commit SHAs. Example:
 
-## Local agent — example flow
-Run the following locally to get quick feedback:
+  ```hcl
+  module "resource_group" {
+    source = "git::https://github.com/patkoch/terraform-modules//azurerm/resource-group?ref=v1.0.0"
+  }
+  ```
 
-- Format: `terraform fmt -recursive`
-- Init: `terraform init`
-- Validate: `terraform validate`
-- Plan: `terraform plan -out=tfplan` or `terraform plan -var-file="terraform.auto.tfvars" -out=tfplan`
-- Optional: `terraform show -json tfplan | jq .` to programmatically inspect the plan output
+- Never create a new service in this repository. This repository only calls
+  existing modules from `patkoch/terraform-modules` and parameterizes them.
+- The Terraform configuration is parameterized exclusively through the
+  `terraform.auto.tfvars` file at the repository root
+  (`./terraform.auto.tfvars`). Never use a different file for this purpose.
+- **Never** put sensitive values into `terraform.auto.tfvars`.
+- State management is handled exclusively via the Azure Storage Account
+  declared in `terraform.tf`:
 
-You can bundle these commands into a small shell/PowerShell script (e.g. `scripts/agent-plan.ps1`) and adjust to your needs.
+  ```hcl
+  backend "azurerm" {
+    resource_group_name  = "azureworkshop-demo-rg"
+    storage_account_name = "azureworkshopdemostorage"
+    container_name       = "tfstateopenai"
+    key                  = "terraform.tfstate"
+  }
+  ```
 
-## Lint & security (recommended checks)
-Add automated checks to keep code quality and security high. Run these locally and in CI:
-
-- Formatting: `terraform fmt -recursive`
-- Static analysis / linting: `tflint --init && tflint`
-- Security scanning: `tfsec .` or `checkov -d .`
-- Policy/unit checks: `conftest test` (Rego policies) or `opa eval` for policy-as-code
-- Documentation: `terraform-docs markdown . | sed -n '1,80p'`
-- Cost estimates: `infracost breakdown --path .` (optional)
-
-Install these tools via your package manager or `brew`, `choco`, or `scoop` on Windows. Use `tfenv` to manage Terraform versions across environments.
-
-## GitHub Actions — example (Plan on PR)
-Create a workflow that runs `terraform fmt`, `terraform validate`, and `terraform plan` automatically on pull requests. Use secure secrets (`AZURE_CREDENTIALS` or the `ARM_*` variables above).
-
-Key points:
-- Store secrets in the repository settings — never in plaintext in the repo.
-- Create Service Principal credentials with the minimum required permissions.
-- Require additional checks (e.g. review/approval) before running `terraform apply`.
-
-Minimal example (place in `.github/workflows/terraform-plan.yml`):
-
-```yaml
-name: Terraform Plan (PR)
-on:
-   pull_request:
-      paths:
-         - '**/*.tf'
-         - '**/*.tfvars'
-
-jobs:
-   plan:
-      runs-on: ubuntu-latest
-      steps:
-         - uses: actions/checkout@v4
-         - name: Setup Terraform
-            uses: hashicorp/setup-terraform@v2
-            with:
-               terraform_version: '1.3.7'
-         - name: Terraform fmt (check)
-            run: terraform fmt -check -recursive
-         - name: Terraform init
-            run: terraform init -input=false
-         - name: Terraform validate
-            run: terraform validate
-         - name: Terraform plan
-            run: terraform plan -out=tfplan -input=false
-         - name: Upload plan artifact
-            uses: actions/upload-artifact@v4
-            with:
-               name: tfplan
-               path: tfplan
-```
-
-Key points:
-- Store secrets in the repository settings — never in plaintext in the repo.
-- Create Service Principal credentials with the minimum required permissions.
-- Require additional checks (for example, approval) before running `terraform apply`.
-
-## Customizing the agent
-- Default tfvars: use `terraform.auto.tfvars` for development values.
-- Modules/backends: adjust backend configuration for remote state when collaborating.
-- Notifications: integrate Slack/Teams webhooks or `scripts/send_requests.py` to post plan results.
-
-## Remote state & locking (Azure)
-Use an Azure Storage Account with a blob container to store Terraform state and enable locking. Example `backend` block:
-
-```hcl
-terraform {
-   backend "azurerm" {
-      resource_group_name  = "rg-terraform-state"
-      storage_account_name = "tfstateacct"
-      container_name       = "tfstate"
-      key                  = "env/terraform.tfstate"
-   }
-}
-```
-
-Create the storage account and container with soft-delete/versioning and follow Azure RBAC practices so only the CI/service principal can access the state.
-
-## Security notes
-- Never commit secrets to Git.
-- Limit Service Principal permissions to the minimum required.
-
-## Pinning providers
-Pin provider versions in your configuration using a `required_providers` block to ensure reproducible runs. Example:
-
-```hcl
-terraform {
-   required_providers {
-      azurerm = {
-         source  = "hashicorp/azurerm"
-         version = ">= 3.0, < 4.0"
-      }
-   }
-}
-```
-
-## Testing modules and automation
-- For simple checks, use `terraform validate` and `terraform plan` with CI. For integration tests, consider Terratest (Go) or kitchen-terraform.
-- Consider automation platforms: Atlantis, Terraform Cloud/Enterprise, or GitHub Actions with strict approval gates.
-- Policy enforcement: use Sentinel (Terraform Cloud), OPA/Conftest, or Azure Policy for governance.
-
----
-If you like, I can also:
-- create a small `scripts/agent-plan.ps1` script,
-- add an example GitHub Actions workflow, or
-- automate the secrets/SP creation steps.
-
-Tell me which of the three options you want.
+- Never update the AzureRM provider without explicit approval; provider updates
+  are performed in a controlled manner.
+- Never use `>=` or `>` for the AzureRM provider version constraint. Pin the
+  AzureRM provider to an exact version (for example `version = "4.7.0"`) or use
+  the pessimistic constraint operator `~>` when appropriate.
