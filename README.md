@@ -71,15 +71,120 @@ Concrete examples:
 
 # MCP server for Azure model / region lookup
 
-This repository ships a small MCP server under `mcp-server/` that wraps the
-[Azure Foundry model / region support page](https://learn.microsoft.com/en-us/azure/foundry-classic/agents/concepts/model-region-support?tabs=global-standard)
-and exposes three tools:
+This repository ships a small [Model Context Protocol](https://modelcontextprotocol.io)
+server under [`mcp-server/`](./mcp-server) that an MCP-aware client (e.g.
+GitHub Copilot, Claude Desktop, Continue) can connect to in order to query
+which Azure regions support which Azure OpenAI / Foundry models.
 
-- `list_regions_for_model(model_name)`
-- `list_models_for_region(region)`
-- `get_recommended_tfvars(model_name)` — returns a `terraform.auto.tfvars` snippet
+## Purpose
 
-See [`mcp-server/README.md`](./mcp-server/README.md) for install and usage.
+The Azure region/model support matrix is published on Microsoft Learn and
+changes regularly (new models, new regions, deprecations):
+
+<https://learn.microsoft.com/en-us/azure/foundry-classic/agents/concepts/model-region-support?tabs=global-standard>
+
+Whenever you want to point this repository at a different model — for
+example switching from `gpt-4o` to `gpt-5` — you need to know two things:
+
+1. Which Azure regions support the target model on `GlobalStandard`?
+2. Which `model_version` string is currently GA for that model?
+
+Looking that up by hand is slow and error-prone. The MCP server automates
+it: it fetches and parses the Microsoft Learn page on demand (1 h cache),
+and exposes the result through three tools so that an agent can pick a
+valid combination and even produce a ready-to-paste
+`terraform.auto.tfvars` snippet.
+
+If the Microsoft Learn page is unreachable (offline runner, restricted
+egress) the server transparently falls back to a small built-in table
+shipped in `mcp-server/server.py`. Every response carries a `source`
+field (`"live"` or `"fallback"`) so the caller can tell which data was
+used.
+
+## Exposed tools
+
+| Tool                          | Input                | What it returns                                                                              |
+| ----------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| `list_regions_for_model`      | `model_name: str`    | Azure region short names that support the model (e.g. `["eastus2", "swedencentral"]`)        |
+| `list_models_for_region`      | `region: str`        | Models available in the given region                                                         |
+| `get_recommended_tfvars`      | `model_name: str`    | A paste-ready snippet for `terraform.auto.tfvars` (region + names + `model_version` + SKU)   |
+
+## Enable the MCP server
+
+The server is a standard stdio MCP server written in Python.
+
+### 1. Install dependencies
+
+```bash
+cd mcp-server
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Register it with your MCP client
+
+Add an entry like the following to your client's MCP configuration (path
+depends on the client — e.g. `~/.config/Claude/claude_desktop_config.json`,
+the VS Code `mcp.json`, or Copilot's MCP settings):
+
+```json
+{
+  "mcpServers": {
+    "azure-model-region": {
+      "command": "/absolute/path/to/mcp-server/.venv/bin/python",
+      "args": ["/absolute/path/to/mcp-server/server.py"]
+    }
+  }
+}
+```
+
+Restart the client. The three tools above should now appear under the
+`azure-model-region` server.
+
+### 3. (Optional) Run it manually
+
+For a quick sanity check you can also start it directly:
+
+```bash
+python mcp-server/server.py
+```
+
+It will wait for MCP JSON-RPC messages on stdin/stdout.
+
+## Usage example
+
+Ask your agent something like:
+
+> *"I want to deploy `gpt-5`. Which Azure region should I use, and what
+> values do I need in `terraform.auto.tfvars`?"*
+
+A capable agent will call the MCP tools in sequence. Conceptually:
+
+```text
+> list_regions_for_model("gpt-5")
+{
+  "model": "gpt-5",
+  "regions": ["eastus2", "swedencentral"],
+  "source": "live",
+  "reference": "https://learn.microsoft.com/.../model-region-support?tabs=global-standard"
+}
+
+> get_recommended_tfvars("gpt-5")
+{
+  "model": "gpt-5",
+  "region": "eastus2",
+  "model_version": "2025-08-07",
+  "tfvars_snippet": "resource_group_name     = \"gpt-5-eastus2-rg\"\nresource_group_location = \"eastus2\"\n..."
+}
+```
+
+The agent can then drop the `tfvars_snippet` straight into
+`terraform.auto.tfvars` and open a PR — exactly the workflow that produced
+the current `gpt-5` / `swedencentral` configuration in this repository.
+
+For more details (parsing logic, fallback table, how to extend) see
+[`mcp-server/README.md`](./mcp-server/README.md).
 
 # Prepare the terraform.tfvars file
 
