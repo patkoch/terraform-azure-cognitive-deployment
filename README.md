@@ -7,7 +7,7 @@ Current state of the workflow execution:
 
 # Contains a Terraform configuration to provision a cognitive deployment on Azure
 
-This [Terraform](https://www.terraform.io/) configuration is capable of deploying an Azure Open AI Service and a gpt-4 model.
+This [Terraform](https://www.terraform.io/) configuration is capable of deploying an Azure Open AI Service and a `gpt-5` model (region `swedencentral`, see [Azure Foundry model/region support](https://learn.microsoft.com/en-us/azure/foundry-classic/agents/concepts/model-region-support?tabs=global-standard)).
 After the deployment, it is possible to conduct a chat by using a Python script with the generated API_Key and a public Endpoint.
 
 <p align="left">
@@ -68,6 +68,18 @@ Concrete examples:
 - Use the agent for all Terraform and workflow changes in this repo.
 - Use `terraform-preflight` whenever you need a fast quality gate.
 - Use `terraform-plan-review` whenever you need to communicate impact clearly in a PR.
+
+# MCP server for Azure model / region lookup
+
+This repository ships a small MCP server under `mcp-server/` that wraps the
+[Azure Foundry model / region support page](https://learn.microsoft.com/en-us/azure/foundry-classic/agents/concepts/model-region-support?tabs=global-standard)
+and exposes three tools:
+
+- `list_regions_for_model(model_name)`
+- `list_models_for_region(region)`
+- `get_recommended_tfvars(model_name)` — returns a `terraform.auto.tfvars` snippet
+
+See [`mcp-server/README.md`](./mcp-server/README.md) for install and usage.
 
 # Prepare the terraform.tfvars file
 
