@@ -11,7 +11,6 @@ module "resource_group" {
 module "cognitive_account" {
   source = "git::https://github.com/patkoch/terraform-modules//azurerm/cognitive-account?ref=v1.0.0"
 
-  name                  = var.cognitive_account_name
   location              = module.resource_group.location
   resource_group_name   = module.resource_group.name
   kind                  = var.cognitive_account_kind
