@@ -6,11 +6,13 @@ resource_group_tags = {
   ManagedBy   = "Terraform"
 }
 
-cognitive_account_name                  = "open-ai-test-sweden-central-ca"
-cognitive_account_kind                  = "OpenAI"
-cognitive_account_sku_name              = "S0"
-cognitive_account_custom_subdomain_name = "open-ai-test-sweden-central"
-cognitive_account_identity_type         = "SystemAssigned"
+cognitive_account_name                          = "open-ai-test-sweden-central-ca"
+cognitive_account_kind                          = "OpenAI"
+cognitive_account_sku_name                      = "S0"
+cognitive_account_custom_subdomain_name         = "open-ai-test-sweden-central"
+cognitive_account_identity_type                 = "SystemAssigned"
+cognitive_account_local_auth_enabled            = true
+cognitive_account_public_network_access_enabled = true
 cognitive_account_tags = {
   Project     = "OpenAI-Test"
   Environment = "Test"

@@ -1,0 +1,29 @@
+name: Terraform Policy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - name: Install policy dependencies
+        run: |
+          python3 -m venv /tmp/terraform-policy-venv
+          /tmp/terraform-policy-venv/bin/pip install -r scripts/requirements-checks.txt
+      - name: Test policy enforcement
+        run: /tmp/terraform-policy-venv/bin/python -m unittest discover -s scripts -p 'test_*.py'
+      - name: Check root configuration
+        run: /tmp/terraform-policy-venv/bin/python scripts/check_terraform_policy.py
+      - name: Scan working tree for secrets
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" \
+            zricethezav/gitleaks:v8.24.3 dir /repo --redact --no-banner

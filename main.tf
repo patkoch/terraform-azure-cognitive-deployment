@@ -23,8 +23,8 @@ module "cognitive_account" {
       kind                          = var.cognitive_account_kind
       sku_name                      = var.cognitive_account_sku_name
       custom_subdomain_name         = var.cognitive_account_custom_subdomain_name
-      local_auth_enabled            = true
-      public_network_access_enabled = true
+      local_auth_enabled            = var.cognitive_account_local_auth_enabled
+      public_network_access_enabled = var.cognitive_account_public_network_access_enabled
 
       identity = {
         type = var.cognitive_account_identity_type
@@ -37,7 +37,7 @@ module "cognitive_account" {
   depends_on = [module.resource_group]
 }
 
-# Cognitive Deployment (GPT-4o Model)
+# Cognitive Deployment
 module "cognitive_deployment" {
   source = "git::https://github.com/patkoch/terraform-modules//azurerm/cognitive-deployment?ref=v2.0.0"
 

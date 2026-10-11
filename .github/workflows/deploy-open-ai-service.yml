@@ -16,7 +16,12 @@ on:
     branches:
       - main
       - 'feature/**'
-  
+
+# Manual deploy/destroy runs share one group so they cannot touch the state in parallel; PR checks get a unique group.
+concurrency:
+  group: terraform-open-ai-service-${{ github.event_name == 'workflow_dispatch' && 'state' || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
 
   pr-verification:
@@ -46,7 +51,7 @@ jobs:
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
         with:
-          tflint_version: latest
+          tflint_version: v0.61.0
 
       - name: Set Terraform Environment Variables
         run: |
@@ -381,7 +386,7 @@ jobs:
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
         with:
-          tflint_version: latest
+          tflint_version: v0.61.0
 
       - name: Run TFLint
         id: tflint
@@ -400,7 +405,7 @@ jobs:
         id: fmt
         run: |
           set -o pipefail
-          terraform fmt 2>&1 | tee /tmp/fmt_output.txt
+          terraform fmt -check -recursive 2>&1 | tee /tmp/fmt_output.txt
         continue-on-error: true
 
       - name: Terraform Initialize 
@@ -584,6 +589,7 @@ jobs:
     if: github.event.inputs.action == 'destroy'
     needs: verification
     runs-on: ubuntu-latest
+    environment: production
     permissions:
       id-token: write
       contents: read

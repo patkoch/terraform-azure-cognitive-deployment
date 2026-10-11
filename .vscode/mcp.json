@@ -2,9 +2,9 @@
   "servers": {
     "azure-model-region": {
       "type": "stdio",
-      "command": "./mcp-server/.venv/bin/python",
+      "command": "${workspaceFolder}/mcp-server/.venv/bin/python",
       "args": [
-        "./mcp-server/server.py"
+        "${workspaceFolder}/mcp-server/server.py"
       ]
     }
   }

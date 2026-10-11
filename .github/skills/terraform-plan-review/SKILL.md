@@ -1,38 +1,39 @@
 ---
 name: terraform-plan-review
-description: "Use when: terraform plan review, summarize tfplan, explain infrastructure changes for pull request, assess risk before apply in this repository."
+description: "Use when: reviewing an existing Terraform plan, explaining changes for a PR, or assessing replacement, deletion, network, identity, and cost risks. Does not generate plans."
 ---
 
 # Terraform Plan Review
 
-## Goal
-Generate and review a Terraform plan, then explain expected infrastructure changes in plain language.
+Review the plan section of `.preflight/report.md`, written by
+[terraform-preflight](../terraform-preflight/SKILL.md), or other supplied sanitized
+evidence. Do not run `terraform plan` again. Read
+[shared rules](../../copilot-instructions.md).
 
 ## Preconditions
-- Repository is initialized (`terraform init` completed)
-- Variables are available in `terraform.auto.tfvars`
 
-## Steps
-1. Run `terraform plan -out tfplan`.
-2. Run `terraform show tfplan`.
-3. Summarize:
-- resources to add
-- resources to change
-- resources to destroy
-- important attribute changes
-4. Call out risk areas:
-- destructive changes
-- naming/location changes
-- cost-relevant changes where obvious
-5. Provide a short PR-ready summary text.
+- The report identifies revision, fingerprint, subscription (masked), and the
+  status of preceding checks. Old plans do not validate newer edits; state the
+  report's timestamp and whether any later edit is known.
+- The reviewer reads only the report. If it is missing or has no plan section,
+  report plan review as blocked; do not read `tfplan`, raw JSON, or state files.
+- The report lists resource addresses, actions, and changed attribute names, not
+  values. An execution-enabled developer may inspect `terraform show -no-color tfplan`
+  locally for values but must not publish raw output, because even redacted text
+  can contain sensitive values. Never use `show -json` in chat.
 
-## Output format
-- `Plan summary`: add/change/destroy counts
-- `Change details`: important resource-level changes
-- `Risk notes`: potential impact
-- `PR text`: 3-6 lines, ready to paste
+## Review
 
-## Guardrails
-- Do not run `terraform apply` automatically.
-- If plan fails, report exact error and likely fix.
-- Keep explanation concise and review-oriented.
+1. Summarize add/change/replace/destroy counts and explicitly identify replacements.
+2. Check naming/location changes, public access, authentication, identity,
+   model/version, capacity, state moves, and cost-relevant changes.
+3. Distinguish configuration evidence from live model availability, quotas,
+   and estimated costs. Do not invent availability claims or prices.
+4. Flag unexpected destruction/replacement for investigation before any human
+   deployment decision. Never apply or mutate state.
+
+## Output
+
+Provenance and counts, highest-risk changes, assumptions/missing evidence, then
+a short PR-ready summary with sanitized values. If a plan is unavailable, say
+so; static inspection is not a substitute for an actual plan.
