@@ -86,6 +86,15 @@ Changes to Terraform or its workflow require the full preflight. Customization-o
 changes require frontmatter, link, and consistency checks, not a cloud plan.
 Missing tools, credentials, or backend access mean blocked, not passed.
 
+The Developer requires a current saved plan for Terraform/workflow changes;
+static checks or an older plan are not sufficient. Before remote backend access,
+it checks authentication and the intended subscription. For local CLI use, run
+`az login` if no valid session exists and supply `TF_VAR_subscription_id` for the
+confirmed target. Approved OIDC or managed identity authentication does not need
+an interactive login. Backend and deployment permissions are also required.
+The Developer requests missing setup steps and reruns preflight once blockers
+are resolved; it does not silently install tools or bypass checks.
+
 `python3 scripts/preflight.py` runs the preflight and writes `.preflight/report.md`
 (gitignored): step statuses, plan counts with resource addresses and changed attribute
 names (never values), changed files, and the diff against HEAD. The Reviewer has no
@@ -281,7 +290,7 @@ cognitive_deployment_model_format = "OpenAI"
 cognitive_deployment_model_name = "gpt-5"
 cognitive_deployment_model_version = "2025-08-07"
 cognitive_deployment_sku_name = "GlobalStandard"
-cognitive_deployment_sku_capacity = 45
+cognitive_deployment_sku_capacity = 50
 cognitive_deployment_version_upgrade_option = "OnceNewDefaultVersionAvailable"
 ```
 
