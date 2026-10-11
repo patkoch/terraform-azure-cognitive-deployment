@@ -1,5 +1,7 @@
-*.terraform.lock.hcl
 *.tfstate
 *.tfstate.backup
 .terraform
 tfplan
+.preflight/
+.venv-checks/
+__pycache__/

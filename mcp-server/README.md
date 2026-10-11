@@ -60,7 +60,7 @@ Example configuration snippet (e.g. for `~/.config/<client>/mcp.json`):
 > list_regions_for_model("gpt-5")
 {
   "model": "gpt-5",
-  "regions": ["eastus2", "swedencentral"],
+  "regions": ["australiaeast", "brazilsouth", "...", "swedencentral", "...", "westus3"],
   "source": "live",
   "reference": "https://learn.microsoft.com/en-us/azure/foundry-classic/agents/concepts/model-region-support?tabs=global-standard"
 }
@@ -68,8 +68,10 @@ Example configuration snippet (e.g. for `~/.config/<client>/mcp.json`):
 > get_recommended_tfvars("gpt-5")
 {
   "model": "gpt-5",
-  "region": "eastus2",
+  "region": "australiaeast",
   "model_version": "2025-08-07",
-  "tfvars_snippet": "resource_group_name     = \"gpt-5-eastus2-rg\"\n..."
+  "tfvars_snippet": "resource_group_name     = \"gpt-5-australiaeast-rg\"\n..."
 }
 ```
+
+The recommended region is the first supported one alphabetically, not a preference.

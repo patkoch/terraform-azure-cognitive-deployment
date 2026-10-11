@@ -39,21 +39,26 @@ variable "cognitive_account_sku_name" {
 variable "cognitive_account_custom_subdomain_name" {
   type        = string
   description = "Custom subdomain name of the cognitive account"
-  default     = null
 }
 
 variable "cognitive_account_identity_type" {
   type        = string
   description = "Type of identity for the cognitive account (SystemAssigned, UserAssigned, or SystemAssigned, UserAssigned)"
-  default     = "SystemAssigned"
+}
+
+variable "cognitive_account_local_auth_enabled" {
+  type        = bool
+  description = "Whether local API key authentication is enabled"
+}
+
+variable "cognitive_account_public_network_access_enabled" {
+  type        = bool
+  description = "Whether public network access is enabled"
 }
 
 variable "cognitive_account_tags" {
   type        = map(string)
   description = "Tags for the cognitive account"
-  default = {
-    ManagedBy = "Terraform"
-  }
 }
 
 variable "cognitive_deployment_name" {
@@ -89,5 +94,4 @@ variable "cognitive_deployment_sku_capacity" {
 variable "cognitive_deployment_version_upgrade_option" {
   type        = string
   description = "Version upgrade option for the cognitive deployment"
-  default     = "OnceNewDefaultVersionAvailable"
 }
