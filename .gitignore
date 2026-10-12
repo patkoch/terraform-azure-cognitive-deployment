@@ -1,6 +1,8 @@
 *.tfstate
 *.tfstate.backup
 .terraform
+.terraform.lock.hcl
+.vscode/settings.json
 tfplan
 .preflight/
 .venv-checks/

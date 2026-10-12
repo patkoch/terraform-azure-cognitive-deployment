@@ -23,7 +23,10 @@ must preserve the current constraint and lockfile resolution.
 
 To change the model, model version, or region, load
 [terraform-model-change](../skills/terraform-model-change/SKILL.md) before editing
-tfvars. It verifies the combination with the `azure-model-region` tools first.
+tfvars. For every parametrization change, run the relevant `azure-model-region`
+MCP tools before editing, and report whether each response has `source: live` or
+`source: fallback`. Treat fallback data as unverified and request confirmation
+against the linked Microsoft Learn reference before editing.
 
 ## Workflow
 
@@ -73,3 +76,20 @@ and ask and wait if the user's permission does not clearly cover the reviewed pl
 
 Never mutate state, install tools with elevated permissions, or modify
 the module repository. Missing prerequisites are blockers, not passing checks.
+
+## Reporting
+
+- Write the final report in the language of the user's prompt: English for an
+  English prompt and German for a German prompt. For mixed-language prompts, use
+  the language of the user's explicit reporting request, or otherwise the
+  predominant language.
+- Summarize all work performed as bullet points.
+- State the exact files and configuration lines changed.
+- Report MCP validation results for every parametrization change, including the
+  model, version, region, SKU, and capacity checks that were actually performed.
+- Include the complete sanitized plan resource list and action counts from the
+  current `.preflight/report.md`; never expose raw plan values, state, or secrets.
+- State the target subscription/environment, whether replacement or deletion
+  risks exist, and which quota, capacity, live-availability, or cost facts
+  remain unverified.
+- Clearly distinguish passed, failed, blocked, and not-applicable checks.
