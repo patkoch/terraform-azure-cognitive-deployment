@@ -290,15 +290,19 @@ cognitive_deployment_model_format = "OpenAI"
 cognitive_deployment_model_name = "gpt-5"
 cognitive_deployment_model_version = "2025-08-07"
 cognitive_deployment_sku_name = "GlobalStandard"
-cognitive_deployment_sku_capacity = 50
+cognitive_deployment_sku_capacity = 60
 cognitive_deployment_version_upgrade_option = "OnceNewDefaultVersionAvailable"
 ```
 
-Authenticate to Azure and supply the subscription through the environment,
-as the GitHub Actions workflow does. Never add API keys or credentials to tfvars.
+Before running Terraform, sign in with Azure CLI (`az login`) if you do not
+already have a valid session. Select the intended subscription, then set
+`TF_VAR_subscription_id` in the same terminal where you will run Terraform.
+The preflight uses this value to target the selected subscription.
+Never add API keys or credentials to tfvars.
 
 ```bash
 az login
+az account set --subscription "<target-subscription-id>"
 export TF_VAR_subscription_id="$(az account show --query id -o tsv)"
 ```
 
