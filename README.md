@@ -90,10 +90,16 @@ The Developer requires a current saved plan for Terraform/workflow changes;
 static checks or an older plan are not sufficient. Before remote backend access,
 it checks authentication and the intended subscription. For local CLI use, run
 `az login` if no valid session exists and supply `TF_VAR_subscription_id` for the
-confirmed target. Approved OIDC or managed identity authentication does not need
-an interactive login. Backend and deployment permissions are also required.
-The Developer requests missing setup steps and reruns preflight once blockers
-are resolved; it does not silently install tools or bypass checks.
+confirmed target. An `export` in the VS Code integrated terminal may not be
+inherited by the agent's command process. After confirming that the active CLI
+subscription is the intended target, the Developer scopes the ID to the
+preflight process without printing or persisting it. Approved OIDC or managed
+identity authentication does not need an interactive login. Backend and
+deployment permissions are also required.
+The Developer creates `.venv-checks` and installs the pinned policy Python
+dependencies from `scripts/requirements-checks.txt` there if missing. This
+repository-local setup does not require another confirmation. External tools,
+credentials, and access are not installed or bypassed automatically.
 
 `python3 scripts/preflight.py` runs the preflight and writes `.preflight/report.md`
 (gitignored): step statuses, plan counts with resource addresses and changed attribute
@@ -113,7 +119,8 @@ structural checks by scanning for secrets; no scanner proves their complete abse
 The AzureRM check enforces `~>` without hardcoding a version number. It cannot
 verify prompt authorization; agent instructions and human review govern that.
 
-Run the policy checker and its regression tests locally:
+Set up the local Python environment and run the policy checker and its regression
+tests:
 
 ```bash
 python3 -m venv .venv-checks
@@ -125,7 +132,9 @@ gitleaks dir . --redact --no-banner
 python scripts/preflight.py
 ```
 
-TFLint and Gitleaks must be installed separately. CI uses TFLint `0.61.0` and
+The Terraform Developer reuses `.venv-checks` and installs the pinned Python
+dependencies there automatically if they are missing. TFLint and Gitleaks must
+be installed separately. CI uses TFLint `0.61.0` and
 Gitleaks `8.24.3`. Configure the policy job and deployment verification as required
 checks in GitHub branch protection; a workflow file alone does not enforce merging.
 The provider lockfile should be committed after successful initialization; routine
@@ -290,14 +299,18 @@ cognitive_deployment_model_format = "OpenAI"
 cognitive_deployment_model_name = "gpt-5"
 cognitive_deployment_model_version = "2025-08-07"
 cognitive_deployment_sku_name = "GlobalStandard"
-cognitive_deployment_sku_capacity = 60
+cognitive_deployment_sku_capacity = 50
 cognitive_deployment_version_upgrade_option = "OnceNewDefaultVersionAvailable"
 ```
 
 Before running Terraform, sign in with Azure CLI (`az login`) if you do not
 already have a valid session. Select the intended subscription, then set
 `TF_VAR_subscription_id` in the same terminal where you will run Terraform.
-The preflight uses this value to target the selected subscription.
+The preflight uses this value to target the selected subscription. This export
+applies to commands launched from that terminal; a VS Code agent may run in a
+separate process and not inherit it. For agent-run preflight, after confirming
+the active CLI subscription is the intended target, the Developer scopes the
+variable to the preflight command instead.
 Never add API keys or credentials to tfvars.
 
 ```bash

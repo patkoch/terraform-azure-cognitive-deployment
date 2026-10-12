@@ -10,16 +10,36 @@ root, never from the separate module repository.
 
 ## Run
 
-Run `python3 scripts/preflight.py` from the repository root after the last edit.
-It executes the order below and writes the sanitized report `.preflight/report.md`
-(gitignored), which the Reviewer reads. If `python-hcl2` or `PyYAML` is missing,
-use the `.venv-checks` interpreter described in the README. `--ci` checks
-formatting without rewriting files. Exit code: 0 passed, 1 failed, 2 blocked.
+Before running preflight, ensure `.venv-checks` exists; create it with
+`python3 -m venv .venv-checks` if needed. Verify that it can import `hcl2` and
+`yaml`; if either is missing, install the pinned policy dependencies with
+`.venv-checks/bin/python -m pip install -r scripts/requirements-checks.txt`.
+These dependencies belong only in the repository-local virtual environment.
+The Terraform Developer is authorized to create this environment and install
+these pinned dependencies without asking again. Do not install packages
+system-wide or upgrade beyond the requirements manifest.
 
-Prerequisites are Terraform, TFLint, Gitleaks, the policy dependencies, Azure
-authentication, `TF_VAR_subscription_id`, and remote backend access. The script
-reports a missing prerequisite as blocked, never as passed. Do not silently
-install or upgrade tools, and never print secrets.
+Then run `./.venv-checks/bin/python scripts/preflight.py` from the repository
+root after the last edit. It executes the order below and writes the sanitized
+report `.preflight/report.md` (gitignored), which the Reviewer reads. `--ci`
+checks formatting without rewriting files. Exit code: 0 passed, 1 failed, 2
+blocked.
+
+Prerequisites are Terraform, TFLint, Gitleaks, Azure authentication,
+`TF_VAR_subscription_id`, and remote backend access. The script reports a
+missing prerequisite as blocked, never as passed. Do not silently install or
+upgrade external tools, and never print secrets.
+
+For local Azure CLI authentication, confirm that the active subscription is the
+intended target before accessing the remote backend. An `export` in the VS Code
+integrated terminal may not be inherited by the agent's command process. When
+the active CLI subscription is confirmed, pass its ID only to the preflight
+process without printing or persisting it:
+
+```bash
+TF_VAR_subscription_id="$(az account show --query id -o tsv)" \
+  ./.venv-checks/bin/python scripts/preflight.py
+```
 
 ## Order
 

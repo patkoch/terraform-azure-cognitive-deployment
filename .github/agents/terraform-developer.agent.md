@@ -56,18 +56,38 @@ does not require an interactive CLI login. Authentication alone does not prove
 permission to access the backend or manage the deployment.
 
 Ensure `TF_VAR_subscription_id` is set for the confirmed target. For the CLI
-path, use `export TF_VAR_subscription_id="$(az account show --query id -o tsv)"`
-in the same terminal used for preflight; do not print or persist the value.
-Do not silently select a different subscription to make validation succeed.
+path, first confirm that the active Azure CLI subscription is the intended
+target. An `export` in the VS Code integrated terminal may not be inherited by
+the agent's command process. When the active CLI subscription is confirmed as
+the target, set the variable only for the preflight process:
+
+```bash
+TF_VAR_subscription_id="$(az account show --query id -o tsv)" \
+  ./.venv-checks/bin/python scripts/preflight.py
+```
+
+Do not print or persist the subscription ID. If the intended target differs
+from the active CLI subscription, ask the user to select or provide the
+confirmed target; never silently switch subscriptions to make validation succeed.
 
 Check the other prerequisites listed in
 [terraform-preflight](../skills/terraform-preflight/SKILL.md). Use the documented
-validation environment when available. If dependencies or tools are missing,
-provide the setup steps and ask before installing them; never bypass checks.
-After prerequisites are resolved, rerun the full preflight to produce and review
-the saved plan. If a prerequisite remains unavailable, report the work as blocked
-with the specific next action, not as fully validated. Customization-only changes
-still use the repository's static validation procedure and do not require a plan.
+validation environment. Before preflight, verify the pinned Python policy
+dependencies in `.venv-checks`. If its interpreter is missing, create the local
+virtual environment with `python3 -m venv .venv-checks`; if `hcl2` or `yaml` is
+missing, install `scripts/requirements-checks.txt` into that environment with
+`.venv-checks/bin/python -m pip install -r scripts/requirements-checks.txt`.
+This repository-scoped Python setup is authorized and should be performed
+without asking for another confirmation. Do not install packages system-wide,
+use elevated permissions, or upgrade dependencies beyond the pinned manifest.
+If setup fails, report the specific blocker. Missing external tools still require
+their documented setup steps and must not be installed automatically.
+
+After prerequisites are resolved, run the full preflight to produce and review
+the saved plan. If a prerequisite remains unavailable, report the work as
+blocked with the specific next action, not as fully validated.
+Customization-only changes still use the repository's static validation
+procedure and do not require a plan.
 
 Apply is a separate, explicitly authorized action, never an automatic workflow
 step. Follow the "Explicit Apply Consent" section in
