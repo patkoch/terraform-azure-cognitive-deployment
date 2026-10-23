@@ -74,8 +74,15 @@ class TerraformPolicyTests(unittest.TestCase):
     def test_sensitive_input_is_rejected_without_disclosure(self):
         self.mutate("variables.tf", 'variable "subscription_id" {',
                     'variable "subscription_id" {\n sensitive = true')
-        with (self.root / "terraform.auto.tfvars").open("a") as stream:
-            stream.write('\nsubscription_id = "do-not-disclose-this"\n')
+        tfvars = self.root / "terraform.auto.tfvars"
+        contents, replacements = re.subn(
+            r'(?m)^subscription_id\s*=\s*"[^"]*"\s*$',
+            'subscription_id = "do-not-disclose-this"',
+            tfvars.read_text(),
+            count=1,
+        )
+        self.assertEqual(replacements, 1)
+        tfvars.write_text(contents)
         errors = check(self.root)
         self.assertTrue(any("sensitive input forbidden" in error for error in errors))
         self.assertNotIn("do-not-disclose-this", "\n".join(errors))
