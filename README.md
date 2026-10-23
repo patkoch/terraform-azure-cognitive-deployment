@@ -271,9 +271,11 @@ For more details (parsing logic, fallback table, how to extend) see
 
 Edit the existing `terraform.auto.tfvars` at the repository root. Do not create
 a competing `terraform.tfvars` file. This file contains non-sensitive deployment
-values only; the current model configuration is:
+values only; its `subscription_id` is the default Terraform target. The current
+model configuration is:
 
 ```hcl
+subscription_id = "<target-subscription-id>"
 resource_group_name = "open-ai-test-sweden-central-rg"
 resource_group_location = "swedencentral"
 resource_group_tags = {
@@ -299,25 +301,29 @@ cognitive_deployment_model_format = "OpenAI"
 cognitive_deployment_model_name = "gpt-5"
 cognitive_deployment_model_version = "2025-08-07"
 cognitive_deployment_sku_name = "GlobalStandard"
-cognitive_deployment_sku_capacity = 50
+cognitive_deployment_sku_capacity = 60
 cognitive_deployment_version_upgrade_option = "OnceNewDefaultVersionAvailable"
 ```
 
 Before running Terraform, sign in with Azure CLI (`az login`) if you do not
-already have a valid session. Select the intended subscription, then set
-`TF_VAR_subscription_id` in the same terminal where you will run Terraform.
-The preflight uses this value to target the selected subscription. This export
-applies to commands launched from that terminal; a VS Code agent may run in a
-separate process and not inherit it. For agent-run preflight, after confirming
-the active CLI subscription is the intended target, the Developer scopes the
-variable to the preflight command instead.
-Never add API keys or credentials to tfvars.
+already have a valid session, then select the same subscription as
+`terraform.auto.tfvars`. The checked-in `subscription_id` sets Terraform's
+target; Terraform gives an auto-TFVars value precedence over
+`TF_VAR_subscription_id`. The GitHub Actions `SUBSCRIPTION_ID` secret remains
+necessary for `azure/login`; keep it equal to the checked-in target so the
+authenticated subscription and Terraform target cannot diverge. The workflow
+also supplies `TF_VAR_subscription_id` to the preflight, but it does not
+override the auto-TFVars value. Never add API keys or credentials to tfvars.
 
 ```bash
 az login
 az account set --subscription "<target-subscription-id>"
 export TF_VAR_subscription_id="$(az account show --query id -o tsv)"
 ```
+
+For an agent-run preflight, the Developer scopes `TF_VAR_subscription_id` to the
+preflight command. The checked-in target lets Terraform consume the subscription
+even when the agent does not inherit an integrated-terminal export.
 
 All inputs except `resource_group_tags` are required. The checked-in file explicitly
 sets identity, upgrade policy, and both authentication/network flags. Their current

@@ -1,3 +1,5 @@
+subscription_id = "ff676f41-96fb-4d4e-80a8-e8a7d6ccd42e"
+
 resource_group_name     = "open-ai-test-sweden-central-rg"
 resource_group_location = "swedencentral"
 resource_group_tags = {
@@ -25,5 +27,5 @@ cognitive_deployment_model_format           = "OpenAI"
 cognitive_deployment_model_name             = "gpt-5"
 cognitive_deployment_model_version          = "2025-08-07"
 cognitive_deployment_sku_name               = "GlobalStandard"
-cognitive_deployment_sku_capacity           = 50
+cognitive_deployment_sku_capacity           = 60
 cognitive_deployment_version_upgrade_option = "OnceNewDefaultVersionAvailable"
