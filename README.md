@@ -37,7 +37,7 @@ Repository rules, agent roles, and reusable procedures are deliberately separate
 These apply independently of the agent selected in VS Code.
 
 AzureRM always uses the pessimistic operator `~>`; its current constraint is
-`~> 5.7`. Agents must preserve the version number and precision unless you
+`~> 5.10`. Agents must preserve the version number and precision unless you
 explicitly request an AzureRM upgrade. Terraform stays `~> 1.16.4`, and the
 existing Azure Storage remote backend remains unchanged. Root Terraform consumes tagged
 modules only; resources are implemented in the separate `terraform-modules` repo.
