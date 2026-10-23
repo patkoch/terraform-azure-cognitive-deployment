@@ -1,3 +1,5 @@
+subscription_id = "ff676f41-96fb-4d4e-80a8-e8a7d6ccd42e"
+
 resource_group_name     = "open-ai-test-sweden-central-rg"
 resource_group_location = "swedencentral"
 resource_group_tags = {
